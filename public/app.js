@@ -253,3 +253,21 @@ window.addEventListener('DOMContentLoaded', () => {
     playChannel(0);
   }, 500);
 });
+
+// --- Integration hook for the TV Hub module (public/tv-hub.js) ---
+// Read-only references to existing elements/state so the official-channel
+// module can pause/resume this player when the user switches to an official
+// broadcaster channel on the same screen, without altering any behavior here.
+window.__piVintageTv = {
+  video,
+  channelOsd,
+  isStaticPlaying: () => !!noiseNode,
+  pauseCustomPlayer: () => {
+    playStaticSound(false);
+    video.pause();
+  },
+  resumeCustomPlayer: () => {
+    if (!isPoweredOn) return;
+    playChannel(currentChannelIndex);
+  },
+};

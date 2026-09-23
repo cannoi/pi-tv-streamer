@@ -233,3 +233,177 @@ select, input {
   color: #666;
   text-align: center;
 }
+
+/* --- TV Hub module: integrated into the main screen, no popup --- */
+
+/* Official broadcaster playback surface, layered inside the existing TV screen */
+.official-frame-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+.official-frame-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.85);
+  color: #33ff33;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.official-close-btn {
+  background: #3b281a;
+  color: #e1e1e6;
+  border: 1px solid #5d4732;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.official-close-btn:hover {
+  background: #4e3623;
+}
+
+.official-frame-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.official-frame-body iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.official-fallback {
+  text-align: center;
+  padding: 16px;
+  color: #ccc;
+  font-size: 12px;
+}
+
+.official-fallback .btn {
+  margin-top: 10px;
+}
+
+/* Channel-picking section, shown inline on the main page like the drawer above it */
+.tv-hub-section {
+  background: #1e1e24;
+  border: 1px solid #333;
+  padding: 16px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 680px;
+  box-sizing: border-box;
+  margin-top: 16px;
+  font-family: 'Courier New', Courier, monospace;
+  color: #e1e1e6;
+}
+
+.tv-hub-section h2 {
+  font-size: 14px;
+  margin-top: 0;
+  color: #b59b75;
+}
+
+.tv-hub-note {
+  font-size: 11px;
+  color: #999;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.tv-hub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tv-hub-tab {
+  background: #2a2a35;
+  color: #e1e1e6;
+  border: 1px solid #444;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.tv-hub-tab.active {
+  background: #3b281a;
+  border-color: #b59b75;
+  color: #b59b75;
+  font-weight: bold;
+}
+
+.tv-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.tv-hub-card {
+  background: #2a2a35;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tv-hub-card.active {
+  border-color: #33ff33;
+}
+
+.tv-hub-card-name {
+  font-weight: bold;
+  font-size: 13px;
+  color: #fff;
+}
+
+.tv-hub-card-provider {
+  font-size: 10px;
+  color: #999;
+}
+
+.tv-hub-card-badge {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: #33ff33;
+  border: 1px solid #2e6930;
+  background: rgba(46,105,48,0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: fit-content;
+}
+
+.tv-hub-card-status {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.tv-hub-card-status.state-live { color: #33ff33; }
+.tv-hub-card-status.state-restricted,
+.tv-hub-card-status.state-access { color: #e0b13a; }
+.tv-hub-card-status.state-unavailable,
+.tv-hub-card-status.state-network { color: #e05a3a; }
+
+.tv-hub-card .btn {
+  font-size: 11px;
+  padding: 6px 10px;
+  margin-top: 2px;
+}
