@@ -1,0 +1,235 @@
+:root {
+  --cabinet-color: #3b281a;
+  --cabinet-shadow: #1c120b;
+  --bezel-color: #1a1a1a;
+  --screen-bg: #050505;
+}
+
+body {
+  background: #121214;
+  color: #e1e1e6;
+  font-family: 'Courier New', Courier, monospace;
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.tv-cabinet {
+  background: linear-gradient(135deg, #4e3623 0%, var(--cabinet-color) 100%);
+  border: 12px solid var(--cabinet-shadow);
+  border-radius: 24px;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.1);
+  width: 90%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.tv-brand {
+  font-weight: bold;
+  letter-spacing: 3px;
+  color: #b59b75;
+  font-size: 14px;
+  margin-bottom: 12px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.6);
+}
+
+.screen-bezel {
+  background: var(--bezel-color);
+  border: 10px solid #0d0d0d;
+  border-radius: 30px / 20px;
+  padding: 15px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.9);
+}
+
+.screen-inner {
+  background: var(--screen-bg);
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px / 12px;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%) contrast(140%) brightness(90%);
+}
+
+#staticCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.15;
+  mix-blend-mode: screen;
+}
+
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+.channel-osd {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  color: #33ff33;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(51, 255, 51, 0.8);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.channel-osd.show {
+  opacity: 1;
+}
+
+.control-panel {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  padding: 0 10px;
+}
+
+.knob-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.knob {
+  width: 44px;
+  height: 44px;
+  background: radial-gradient(circle, #b59b75 0%, #5d4732 100%);
+  border-radius: 50%;
+  border: 3px solid #281a10;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  transition: transform 0.2s;
+}
+
+.knob:active {
+  transform: scale(0.95);
+}
+
+.knob-line {
+  width: 4px;
+  height: 18px;
+  background: #1c120b;
+  position: absolute;
+  top: 2px;
+  left: 20px;
+  border-radius: 2px;
+}
+
+.label {
+  font-size: 10px;
+  color: #b59b75;
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+.speaker-grille {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 120px;
+}
+
+.slot {
+  height: 4px;
+  background: #1c120b;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.control-drawer {
+  background: #1e1e24;
+  border: 1px solid #333;
+  padding: 16px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 680px;
+  box-sizing: border-box;
+}
+
+.control-drawer h2 {
+  font-size: 14px;
+  margin-top: 0;
+  color: #b59b75;
+}
+
+.channel-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+select, input {
+  background: #2a2a35;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  flex: 1;
+}
+
+.btn {
+  background: #3b281a;
+  color: #e1e1e6;
+  border: 1px solid #5d4732;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+.btn:hover {
+  background: #4e3623;
+}
+
+.btn.primary {
+  background: #2e6930;
+  border-color: #3b873e;
+}
+
+.custom-add-box {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.paf-made-by {
+  margin-top: 20px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}

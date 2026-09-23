@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi Vintage TV Streamer</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <link rel="stylesheet" href="style.css">
+<style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style></head>
+<body>
+  <div class="tv-cabinet">
+    <div class="tv-brand">PI-VINTAGE 1984</div>
+    <div class="screen-bezel">
+      <div class="screen-inner">
+        <video id="tvVideo" crossorigin="anonymous" playsinline autoplay></video>
+        <canvas id="staticCanvas"></canvas>
+        <div class="channel-osd" id="channelOsd">CH 01 - VTV1</div>
+        <div class="scanlines"></div>
+      </div>
+    </div>
+    
+    <div class="control-panel">
+      <div class="knob-group">
+        <div class="knob" id="powerKnob" title="Bật/Tắt TV">
+          <div class="knob-line"></div>
+        </div>
+        <span class="label">POWER</span>
+      </div>
+      
+      <div class="knob-group">
+        <div class="knob" id="dialKnob" title="Xoay đổi kênh">
+          <div class="knob-line"></div>
+        </div>
+        <span class="label">TUNER</span>
+      </div>
+      
+      <div class="speaker-grille">
+        <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-drawer">
+    <h2>🎛️ Bảng Điều Khiển Kênh TV</h2>
+    <div class="channel-controls">
+      <select id="channelSelect"></select>
+      <button id="btnStatic" class="btn">Hiệu Ứng Nhiễu</button>
+      <button id="btnAddModal" class="btn">+ Thêm Kênh</button>
+    </div>
+    <div class="custom-add-box" id="addBox" style="display:none;">
+      <input type="text" id="customName" placeholder="Tên kênh (VD: Kênh mới)">
+      <input type="text" id="customUrl" placeholder="URL stream (.m3u8)">
+      <button id="btnSaveCustom" class="btn primary">Lưu Kênh</button>
+    </div>
+  </div>
+
+  
+  <script src="app.js"></script>
+<img class="paf-made-by" src="/made-by.png" alt="Made with App Builder — Pi SoloHost"></body>
+</html>
