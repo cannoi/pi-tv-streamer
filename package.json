@@ -1,6 +1,6 @@
 {
   "name": "pi-vintage-tv-streamer",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "Vintage TV Streamer with retro black & white styling, static noise, and HLS support",
   "main": "server.js",
   "scripts": {

@@ -1,9 +1,25 @@
-# Pi Vintage TV Streamer
+# Pi Vintage TV — Bảo Tàng TV Việt
 
-Ứng dụng xem TV trực tuyến hoài cổ lấy cảm hứng từ những chiếc TV đen trắng thập niên cũ.
+Authentic Vietnamese retro television experience (1970s–1990s Bao Cap era).
 
-## Tính năng
-- Giao diện khung TV cơ khí cổ điển.
-- Bộ lọc đen trắng & hiệu ứng quét hình thời gian thực.
-- Màn hình nhiễu (Static noise) và âm thanh tĩnh khi mất tín hiệu.
-- Sẵn danh sách kênh VN và quốc tế, hỗ trợ thêm kênh M3U8 cá nhân.
+## Brands
+| Brand | Era | Look |
+|-------|-----|------|
+| **National** | 1980s | Burgundy red plastic portable |
+| **Sharp** | 1980s | Cream / ivory family set |
+| **Sony Trinitron** | 1970s | Dark walnut wood + legs |
+| **Rubin (РУБИН)** | Soviet import | Heavy wood block |
+| **Viettronics** | Early 1990s | Charcoal plastic (Tân Bình / Thủ Đức) |
+
+## Features
+- Switch brands via strip or cycle button
+- CRT scanlines, vignette, B&W/Color mode
+- Retro OSD, physical knobs
+- HLS streams + official VTV/HTV pages in channel list
+- English / Vietnamese
+
+## Run
+```bash
+npm install && npm start
+# → http://localhost:8080
+```

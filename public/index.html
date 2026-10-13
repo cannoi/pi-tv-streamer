@@ -2,74 +2,131 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pi Vintage TV Streamer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1210">
+  <title>Pi Vintage TV — Bảo Tàng TV Việt</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <link rel="stylesheet" href="style.css">
-<style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style></head>
+  <style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style>
+</head>
 <body>
-  <div class="tv-cabinet">
-    <div class="tv-brand">PI-VINTAGE 1984</div>
-    <div class="screen-bezel">
-      <div class="screen-inner">
-        <video id="tvVideo" crossorigin="anonymous" playsinline autoplay></video>
-        <canvas id="staticCanvas"></canvas>
-        <div class="channel-osd" id="channelOsd">CH 01 - VTV1</div>
-        <div class="scanlines"></div>
-        <div class="official-frame-wrap" id="officialFrameWrap" style="display:none;">
-          <div class="official-frame-header">
-            <span id="officialFrameTitle"></span>
-            <button id="btnCloseOfficial" class="official-close-btn" title="Về kênh thường">◀ Kênh thường</button>
+  <header class="app-header">
+    <div class="brand-title">
+      <span class="icon">📺</span>
+      <span data-i18n="appTitle">Bảo Tàng TV Việt</span>
+    </div>
+    <div class="header-actions">
+      <!-- B&W / Color toggle -->
+      <button id="btnBw" class="btn-bw" title="B&W / Color" aria-label="Toggle black and white">
+        <span class="bw-label">B&W</span>
+      </button>
+      <!-- Single theme cycle: half black / half white -->
+      <button id="btnTheme" class="btn-theme-cycle" title="Đổi thương hiệu TV" aria-label="Change brand"></button>
+      <button id="btnLang" class="btn-icon" title="Language / Ngôn ngữ">🌐</button>
+    </div>
+  </header>
+
+  <!-- Brand strip (quick select) -->
+  <nav class="brand-strip" id="brandStrip" aria-label="TV Brands">
+    <button type="button" class="brand-chip" data-theme="national" title="National">NATIONAL</button>
+    <button type="button" class="brand-chip" data-theme="sharp" title="Sharp">SHARP</button>
+    <button type="button" class="brand-chip" data-theme="sony" title="Sony Trinitron">SONY</button>
+    <button type="button" class="brand-chip" data-theme="rubin" title="Rubin">РУБИН</button>
+    <button type="button" class="brand-chip" data-theme="viettronics" title="Viettronics">VIETTRONICS</button>
+  </nav>
+
+  <main class="tv-stage">
+    <div class="tv-cabinet" id="tvCabinet" data-theme="national">
+      <div class="tv-brand" id="tvBrand">NATIONAL</div>
+
+      <div class="tv-body">
+        <!-- CRT Screen -->
+        <div class="screen-bezel" id="screenBezel">
+          <div class="crt-screen-container" id="screenInner">
+            <video id="tvVideo" crossorigin="anonymous" playsinline autoplay muted></video>
+            <canvas id="staticCanvas"></canvas>
+            <div class="channel-osd" id="channelOsd">CH-01</div>
+            <div class="scanlines"></div>
+            <div class="crt-vignette"></div>
+            <div class="crt-glow"></div>
+            <div class="official-frame-wrap" id="officialFrameWrap" style="display:none;">
+              <div class="official-frame-header">
+                <span id="officialFrameTitle"></span>
+                <button id="btnCloseOfficial" class="official-close-btn" data-i18n="backToChannels">◀ Kênh thường</button>
+              </div>
+              <div class="official-frame-body" id="officialFrameBody"></div>
+            </div>
           </div>
-          <div class="official-frame-body" id="officialFrameBody"></div>
         </div>
-      </div>
-    </div>
-    
-    <div class="control-panel">
-      <div class="knob-group">
-        <div class="knob" id="powerKnob" title="Bật/Tắt TV">
-          <div class="knob-line"></div>
-        </div>
-        <span class="label">POWER</span>
-      </div>
-      
-      <div class="knob-group">
-        <div class="knob" id="dialKnob" title="Xoay đổi kênh">
-          <div class="knob-line"></div>
-        </div>
-        <span class="label">TUNER</span>
-      </div>
-      
-      <div class="speaker-grille">
-        <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
-      </div>
-    </div>
-  </div>
 
-  <div class="control-drawer">
-    <h2>🎛️ Bảng Điều Khiển Kênh TV</h2>
-    <div class="channel-controls">
-      <select id="channelSelect"></select>
-      <button id="btnStatic" class="btn">Hiệu Ứng Nhiễu</button>
-      <button id="btnAddModal" class="btn">+ Thêm Kênh</button>
+        <!-- Side physical controls -->
+        <div class="side-panel" id="sidePanel">
+          <div class="knob-group">
+            <div class="knob" id="powerKnob" title="Power">
+              <div class="knob-line"></div>
+            </div>
+            <span class="label">POWER</span>
+          </div>
+          <div class="knob-group">
+            <div class="knob" id="dialKnob" title="Channel / Tuner">
+              <div class="knob-line"></div>
+            </div>
+            <span class="label">TUNER</span>
+          </div>
+          <div class="speaker-grille" id="speakerGrille">
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+            <div class="slot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom panel (used by some brands) -->
+      <div class="control-panel" id="controlPanel">
+        <div class="knob-group">
+          <div class="knob" id="powerKnobBottom" title="Power"><div class="knob-line"></div></div>
+          <span class="label">POWER</span>
+        </div>
+        <div class="knob-group">
+          <div class="knob" id="dialKnobBottom" title="Tuner"><div class="knob-line"></div></div>
+          <span class="label">TUNER</span>
+        </div>
+        <div class="speaker-grille bottom-speaker">
+          <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+          <div class="slot"></div><div class="slot"></div>
+        </div>
+      </div>
+
+      <!-- Wooden legs (Sony / Rubin style) -->
+      <div class="tv-legs" aria-hidden="true"></div>
     </div>
+
+    <!-- Channel bar -->
+    <div class="universal-controls" id="universalControls">
+      <button id="btnPower" class="ctrl-btn" title="Power">⏻</button>
+      <button id="btnPrev" class="ctrl-btn" title="Previous">⏮</button>
+      <button id="btnNext" class="ctrl-btn" title="Next">⏭</button>
+      <select id="channelSelect" class="channel-select" aria-label="Channel"></select>
+      <button id="btnStatic" class="ctrl-btn" title="Static">📡</button>
+      <button id="btnAddModal" class="ctrl-btn" title="Add Channel">＋</button>
+    </div>
+
     <div class="custom-add-box" id="addBox" style="display:none;">
-      <input type="text" id="customName" placeholder="Tên kênh (VD: Kênh mới)">
+      <input type="text" id="customName" placeholder="Tên kênh / Channel name">
       <input type="text" id="customUrl" placeholder="URL stream (.m3u8)">
-      <button id="btnSaveCustom" class="btn primary">Lưu Kênh</button>
+      <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Lưu kênh</button>
     </div>
-  </div>
+  </main>
 
-  <div class="tv-hub-section" id="tvHubSection">
-    <h2>📺 TV Hub — Kênh Chính Thức</h2>
-    <p class="tv-hub-note">Chỉ liên kết tới nguồn phát chính thức của đài truyền hình (VTV, HTV). Ứng dụng không tải, không sao chép và không phát lại video — chọn kênh sẽ phát ngay trên màn hình TV phía trên.</p>
-    <div class="tv-hub-tabs" id="tvHubTabs"></div>
-    <div class="tv-hub-grid" id="tvHubGrid"></div>
+  <!-- Hidden stubs so tv-hub.js does not throw -->
+  <div id="tvHubSection" style="display:none" aria-hidden="true">
+    <div id="tvHubTabs"></div>
+    <div id="tvHubGrid"></div>
   </div>
 
   <script src="tv-channels.js"></script>
   <script src="app.js"></script>
   <script src="tv-hub.js"></script>
-<img class="paf-made-by" src="/made-by.png" alt="Made with App Builder — Pi SoloHost"></body>
+  <img class="paf-made-by" src="/made-by.png" alt="Made with App Builder">
+</body>
 </html>
