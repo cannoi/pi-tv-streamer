@@ -971,8 +971,12 @@ function runAiAction(name, args) {
       const name = String(args.name || args.title || '').trim();
       const url = String(args.url || args.link || '').trim();
       if (!name || !url) return { ok: false, error: 'name_and_url_required' };
+      // Skip duplicate URL already in list
+      if (channels.some(c => c.url === url)) {
+        return { ok: true, channel: name, skipped: true };
+      }
       const ch = {
-        id: 'custom-' + Date.now(),
+        id: 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
         name: 'CH-' + String(channels.length + 1).padStart(2, '0') + ' ' + name,
         category: 'Custom',
         url
@@ -982,7 +986,12 @@ function runAiAction(name, args) {
       saveCustomChannels(list);
       channels.push(ch);
       renderChannelSelect();
-      playChannel(channels.length - 1);
+      // Only switch to the first newly added channel in a batch
+      if (!window.__piAiBatchAdded) {
+        window.__piAiBatchAdded = true;
+        playChannel(channels.length - 1);
+        setTimeout(() => { window.__piAiBatchAdded = false; }, 800);
+      }
       return { ok: true, channel: ch.name };
     }
     case 'remove_channel': {

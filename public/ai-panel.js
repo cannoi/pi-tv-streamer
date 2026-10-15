@@ -76,11 +76,10 @@ function executeActions(actions) {
   (actions || []).forEach(a => {
     if (!a || a.ok === false) return;
     const name = a.action || a.name;
+    // Prefer args from model; server may echo args on the result object
     const args = a.args || {};
-    const value = a.value || args.value || args.name || args.index || '';
-    if (name === 'open_tab') document.querySelector('.tab[data-tab="' + (value || 'chat') + '"]')?.click();
     if (typeof api.runAiAction === 'function') {
-      try { api.runAiAction(name, args.value !== undefined ? args : { ...args, value }); } catch (e) { console.warn(e); }
+      try { api.runAiAction(name, args); } catch (e) { console.warn(e); }
     }
   });
 }

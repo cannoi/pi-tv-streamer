@@ -991,37 +991,46 @@ body.cinema-mode .tv-stage {
   padding: 0 !important;
 }
 
-/* Fullscreen control on CRT (YouTube-like) */
+/* Fullscreen control — minimal, show on hover so it does not cover the picture */
 .fs-btn {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  right: 6px;
+  bottom: 6px;
   z-index: 28;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.28);
-  background: rgba(0,0,0,0.55);
-  color: #eee;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.28);
+  color: rgba(255,255,255,0.85);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.75;
+  opacity: 0;
   pointer-events: auto;
+  transition: opacity 0.2s ease, background 0.2s ease;
 }
-.fs-btn:hover { opacity: 1; background: rgba(0,0,0,0.75); }
+.crt-viewport:hover .fs-btn,
+.fs-btn:focus-visible,
+.fs-btn.is-fs {
+  opacity: 0.85;
+}
+.fs-btn:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.55);
+}
 .fs-icon {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   box-sizing: border-box;
-  border: 2px solid currentColor;
-  border-radius: 2px;
+  border: 1.5px solid currentColor;
+  border-radius: 1px;
   position: relative;
 }
 .fs-btn.is-fs .fs-icon {
-  width: 10px;
-  height: 10px;
-  border-width: 2px;
+  width: 8px;
+  height: 8px;
 }
