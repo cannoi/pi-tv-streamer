@@ -574,3 +574,147 @@ body.cinema-mode .tv-frame-container {
   body.cinema-mode { padding: 4px; }
   body.cinema-mode .tv-frame-container { max-width: min(700px, 94vw); }
 }
+
+/* ============================================================
+   Compact header & bottom bar + channel manager + tuned-in
+   ============================================================ */
+.app-header {
+  max-width: 720px;
+  padding: 6px 2px 2px;
+  gap: 8px;
+}
+.brand-title { font-size: 0.95rem; gap: 6px; }
+.brand-title .icon { font-size: 1.05rem; }
+.header-actions { gap: 6px; }
+.btn-icon {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border-radius: 7px;
+  min-height: 30px;
+}
+.model-select {
+  max-width: 120px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 7px;
+}
+.btn-bw { display: none; } /* replaced by icon in header */
+
+.universal-controls {
+  max-width: 720px;
+  padding: 6px 8px;
+  gap: 5px;
+  border-radius: 12px;
+}
+.ctrl-btn {
+  width: 34px; height: 34px;
+  font-size: 0.95rem;
+}
+.country-select {
+  max-width: 88px;
+  padding: 6px 6px;
+  font-size: 0.72rem;
+  border-radius: 8px;
+}
+.channel-select {
+  min-width: 100px;
+  max-width: 200px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+/* Channel manager panel */
+.custom-add-box {
+  max-width: 720px;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+}
+.ch-manager-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--accent, #c9a66b);
+  text-align: center;
+}
+.ch-manager-list {
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #332e28;
+  border-radius: 8px;
+  padding: 6px;
+  background: rgba(0,0,0,0.25);
+}
+.ch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  background: rgba(255,255,255,0.03);
+}
+.ch-row.ch-custom { border-left: 2px solid var(--accent, #c9a66b); }
+.ch-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-row-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+.ch-mini-btn {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  border: 1px solid #3a3530;
+  background: #2a2620;
+  color: #eee;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+.ch-mini-btn.danger { background: #3a1818; border-color: #5a2828; }
+.ch-manager-form { display: flex; flex-direction: column; gap: 6px; }
+.ch-manager-form input {
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+.ch-manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.btn.danger {
+  background: #5c1e1e;
+  border-color: #8b2e2e;
+  color: #fff;
+}
+.btn {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+/* After 5s: tuned-in — softer CRT, fitted video (real TV feel) */
+.tv-frame-container.tuned-in .scanlines {
+  opacity: 0.45;
+}
+.tv-frame-container.tuned-in .crt-vignette {
+  opacity: 0.7;
+}
+.tv-frame-container.tuned-in video.video-fitted {
+  background: #000;
+  transition: object-fit 0.4s ease;
+}
+.crt-viewport video {
+  transition: filter 0.35s, object-fit 0.4s ease;
+}
+
+@media (max-width: 560px) {
+  .app-header { padding: 4px 0 0; }
+  .universal-controls { padding: 5px 6px; gap: 4px; }
+  .ctrl-btn { width: 32px; height: 32px; }
+  .country-select { max-width: 72px; font-size: 0.68rem; }
+  .channel-select { min-width: 80px; font-size: 0.75rem; }
+  .model-select { max-width: 100px; font-size: 0.7rem; }
+}

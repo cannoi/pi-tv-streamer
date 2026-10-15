@@ -16,14 +16,12 @@
       <span data-i18n="appTitle">Pi Vintage TV</span>
     </div>
     <div class="header-actions">
-      <button id="btnBw" class="btn-bw" title="B&W / Color" aria-label="Toggle B&W">
-        <span class="bw-label">B&W</span>
-      </button>
-      <select id="tv-model-select" class="model-select" aria-label="TV Model" title="TV Model">
-        <option value="tv-international-red">International Red</option>
-        <option value="tv-sampo-cream">SAMPO Cream</option>
-        <option value="tv-samsung-deluxe">Samsung Deluxe</option>
+      <select id="tv-model-select" class="model-select" aria-label="Theme" title="Theme">
+        <option value="tv-international-red">International</option>
+        <option value="tv-sampo-cream">SAMPO</option>
+        <option value="tv-samsung-deluxe">Samsung</option>
       </select>
+      <button id="btnBw" class="btn-icon" title="B&W / Color" aria-label="B&W">◐</button>
       <button id="btnLang" class="btn-icon" title="Language">🌐</button>
     </div>
   </header>
@@ -115,24 +113,32 @@
       <button id="btnPrev" class="ctrl-btn" title="Prev">⏮</button>
       <button id="btnNext" class="ctrl-btn" title="Next">⏭</button>
       <select id="countrySelect" class="country-select" aria-label="Country" title="Country">
-        <option value="vn">🇻🇳 Việt Nam</option>
-        <option value="us">🇺🇸 USA</option>
-        <option value="jp">🇯🇵 Japan</option>
-        <option value="kr">🇰🇷 Korea</option>
-        <option value="eu">🇪🇺 Europe</option>
-        <option value="intl">🌍 International</option>
+        <option value="vn">🇻🇳 VN</option>
+        <option value="us">🇺🇸 US</option>
+        <option value="jp">🇯🇵 JP</option>
+        <option value="kr">🇰🇷 KR</option>
+        <option value="eu">🇪🇺 EU</option>
+        <option value="intl">🌍 INT</option>
       </select>
       <select id="channelSelect" class="channel-select" aria-label="Channel"></select>
       <button id="btnStatic" class="ctrl-btn" title="Static">📡</button>
-      <button id="btnCinema" class="ctrl-btn" title="TV only mode">⛶</button>
-      <button id="btnAddModal" class="ctrl-btn" title="Add">＋</button>
+      <button id="btnCinema" class="ctrl-btn" title="TV only">⛶</button>
+      <button id="btnAddModal" class="ctrl-btn" title="Channels">✎</button>
     </div>
-    <button id="btnExitCinema" class="exit-cinema-btn" style="display:none;" title="Exit TV only">✕</button>
+    <button id="btnExitCinema" class="exit-cinema-btn" style="display:none;" title="Exit">✕</button>
 
     <div class="custom-add-box" id="addBox" style="display:none;">
-      <input type="text" id="customName" placeholder="Channel name">
-      <input type="text" id="customUrl" placeholder="Stream URL (.m3u8)">
-      <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Save</button>
+      <div class="ch-manager-title" data-i18n="manageChannels">Channels</div>
+      <div class="ch-manager-list" id="channelManagerList"></div>
+      <div class="ch-manager-form">
+        <input type="text" id="customName" placeholder="Name / Tên">
+        <input type="text" id="customUrl" placeholder="URL (.m3u8 or page)">
+        <div class="ch-manager-actions">
+          <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Save</button>
+          <button id="btnDeleteChannel" class="btn danger" data-i18n="deleteChannel">Delete</button>
+          <button id="btnCancelEdit" class="btn" data-i18n="cancel">Cancel</button>
+        </div>
+      </div>
     </div>
   </main>
 

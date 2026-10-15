@@ -77,6 +77,9 @@ let isBwMode = localStorage.getItem('pi_vintage_bw') === '1';
 let audioCtx = null;
 let noiseNode = null;
 let hls = null;
+let fitTimer = null;
+let staticWatchTimer = null;
+let editingChannelId = null;
 let currentLang = localStorage.getItem('pi_vintage_lang') || 'vi';
 let lastPowerPress = 0;
 const POWER_DOUBLE_MS = 5000;
@@ -117,7 +120,12 @@ const i18n = {
     muteStatic: 'Tắt tiếng rè',
     cinemaOn: 'Chỉ khung TV',
     cinemaOff: 'Thoát',
-    powerOff: 'Tắt máy'
+    powerOff: 'Tắt máy',
+    manageChannels: 'Quản lý kênh',
+    deleteChannel: 'Xóa',
+    cancel: 'Hủy',
+    editChannel: 'Sửa',
+    tunedIn: 'Đã khớp tín hiệu'
   },
   en: {
     appTitle: 'Pi Vintage TV',
@@ -126,7 +134,12 @@ const i18n = {
     muteStatic: 'Static muted',
     cinemaOn: 'TV only',
     cinemaOff: 'Exit',
-    powerOff: 'Power off'
+    powerOff: 'Power off',
+    manageChannels: 'Manage channels',
+    deleteChannel: 'Delete',
+    cancel: 'Cancel',
+    editChannel: 'Edit',
+    tunedIn: 'Signal locked'
   }
 };
 function t(key) {
@@ -335,6 +348,114 @@ function handlePowerOffOnly() {
   }
 }
 
+
+function clearWatchTimers() {
+  if (fitTimer) { clearTimeout(fitTimer); fitTimer = null; }
+  if (staticWatchTimer) { clearTimeout(staticWatchTimer); staticWatchTimer = null; }
+  if (frameContainer) frameContainer.classList.remove('tuned-in');
+  if (video) video.classList.remove('video-fitted');
+}
+
+/** After 5s of playback, fit video aspect into CRT for natural TV look */
+function scheduleVideoFit() {
+  if (fitTimer) clearTimeout(fitTimer);
+  if (frameContainer) frameContainer.classList.remove('tuned-in');
+  if (video) video.classList.remove('video-fitted');
+  fitTimer = setTimeout(() => {
+    if (!isPoweredOn || !video) return;
+    const ch = channels[currentChannelIndex];
+    if (!ch || ch.url === 'STATIC' || (ch.url && ch.url.startsWith('OFFICIAL:'))) return;
+    // Prefer contain if video is wider/narrower than 4:3 CRT; else cover
+    try {
+      const vw = video.videoWidth || 16;
+      const vh = video.videoHeight || 9;
+      const videoAr = vw / vh;
+      const crtAr = 4 / 3;
+      if (Math.abs(videoAr - crtAr) > 0.12) {
+        video.style.objectFit = 'contain';
+      } else {
+        video.style.objectFit = 'cover';
+      }
+    } catch (e) {
+      video.style.objectFit = 'contain';
+    }
+    video.classList.add('video-fitted');
+    if (frameContainer) frameContainer.classList.add('tuned-in');
+    showOsd(t('tunedIn'));
+  }, 5000);
+}
+
+/** Auto-mute static noise after 3 minutes of continuous viewing */
+function scheduleStaticAutoOff() {
+  if (staticWatchTimer) clearTimeout(staticWatchTimer);
+  staticWatchTimer = setTimeout(() => {
+    if (noiseNode) {
+      playStaticSound(false);
+      showOsd(currentLang === 'vi' ? 'Đã tắt nhiễu' : 'Noise off');
+    }
+  }, 3 * 60 * 1000);
+}
+
+function getCustomChannels() {
+  try {
+    return JSON.parse(localStorage.getItem('pi_vintage_channels') || '[]');
+  } catch (e) { return []; }
+}
+function saveCustomChannels(list) {
+  localStorage.setItem('pi_vintage_channels', JSON.stringify(list));
+}
+
+function renderChannelManager() {
+  const listEl = document.getElementById('channelManagerList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  channels.forEach((ch, idx) => {
+    const row = document.createElement('div');
+    row.className = 'ch-row' + (ch.id && String(ch.id).startsWith('custom-') ? ' ch-custom' : '');
+    row.innerHTML = '<span class="ch-row-name"></span><span class="ch-row-actions"></span>';
+    row.querySelector('.ch-row-name').textContent = ch.name;
+    const actions = row.querySelector('.ch-row-actions');
+    if (ch.id && String(ch.id).startsWith('custom-')) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'ch-mini-btn';
+      editBtn.textContent = '✎';
+      editBtn.title = t('editChannel');
+      editBtn.addEventListener('click', () => {
+        editingChannelId = ch.id;
+        if (customName) customName.value = ch.name.replace(/^CH-\d+\s*/, '');
+        if (customUrl) customUrl.value = ch.url || '';
+      });
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'ch-mini-btn danger';
+      delBtn.textContent = '✕';
+      delBtn.title = t('deleteChannel');
+      delBtn.addEventListener('click', () => {
+        deleteCustomChannel(ch.id);
+      });
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+    } else {
+      actions.textContent = '•';
+      actions.style.opacity = '0.4';
+    }
+    row.addEventListener('dblclick', () => playChannel(idx));
+    listEl.appendChild(row);
+  });
+}
+
+function deleteCustomChannel(id) {
+  let list = getCustomChannels().filter(c => c.id !== id);
+  saveCustomChannels(list);
+  // Reload current country list with customs
+  loadCountry(currentCountry);
+  editingChannelId = null;
+  if (customName) customName.value = '';
+  if (customUrl) customUrl.value = '';
+  renderChannelManager();
+}
+
 function playChannel(index) {
   if (index < 0 || index >= channels.length) return;
   currentChannelIndex = index;
@@ -342,6 +463,7 @@ function playChannel(index) {
   if (frameContainer) frameContainer.style.setProperty('--ch-rot', (index * 30) + 'deg');
   const ch = channels[index];
   showOsd(ch.name);
+  clearWatchTimers();
   if (!isPoweredOn) return;
   if (hls) { hls.destroy(); hls = null; }
 
@@ -382,7 +504,12 @@ function playChannel(index) {
   } else if (video) {
     video.src = ch.url;
   }
-  if (video) video.play().catch(() => playStaticSound(true));
+  if (video) {
+    video.play().then(() => { scheduleVideoFit(); scheduleStaticAutoOff(); }).catch(() => playStaticSound(true));
+  } else {
+    scheduleVideoFit();
+    scheduleStaticAutoOff();
+  }
 }
 
 /* Events */
@@ -446,7 +573,10 @@ document.addEventListener('keydown', e => {
 });
 
 if (btnAddModal) btnAddModal.addEventListener('click', () => {
-  if (addBox) addBox.style.display = addBox.style.display === 'none' ? 'flex' : 'none';
+  if (!addBox) return;
+  const open = addBox.style.display === 'none' || !addBox.style.display;
+  addBox.style.display = open ? 'flex' : 'none';
+  if (open) renderChannelManager();
 });
 if (btnSaveCustom) btnSaveCustom.addEventListener('click', () => {
   const name = customName.value.trim();
@@ -455,22 +585,53 @@ if (btnSaveCustom) btnSaveCustom.addEventListener('click', () => {
     alert(currentLang === 'vi' ? 'Vui lòng nhập tên và URL!' : 'Please enter name and URL!');
     return;
   }
-  const ch = {
-    id: 'custom-' + Date.now(),
-    name: 'CH-' + String(channels.length + 1).padStart(2, '0') + ' ' + name,
-    category: 'Custom', url
-  };
-  channels.push(ch);
-  const saved = localStorage.getItem('pi_vintage_channels');
-  let list = [];
-  try { list = saved ? JSON.parse(saved) : []; } catch (e) {}
-  list.push(ch);
-  localStorage.setItem('pi_vintage_channels', JSON.stringify(list));
-  renderChannelSelect();
+  let list = getCustomChannels();
+  if (editingChannelId) {
+    list = list.map(c => c.id === editingChannelId ? { ...c, name: name, url: url } : c);
+    // also fix display name prefix if needed
+    list = list.map(c => c.id === editingChannelId ? { ...c, name: c.name.match(/^CH-\d+/) ? c.name.replace(/^(CH-\d+\s*).*/, '$1' + name) : name } : c);
+    saveCustomChannels(list);
+    editingChannelId = null;
+  } else {
+    const ch = {
+      id: 'custom-' + Date.now(),
+      name: 'CH-' + String(channels.length + 1).padStart(2, '0') + ' ' + name,
+      category: 'Custom', url
+    };
+    list.push(ch);
+    saveCustomChannels(list);
+  }
+  loadCountry(currentCountry);
   customName.value = ''; customUrl.value = '';
+  renderChannelManager();
   if (addBox) addBox.style.display = 'none';
-  playChannel(channels.length - 1);
 });
+
+const btnDeleteChannel = document.getElementById('btnDeleteChannel');
+if (btnDeleteChannel) {
+  btnDeleteChannel.addEventListener('click', () => {
+    if (editingChannelId) {
+      deleteCustomChannel(editingChannelId);
+      return;
+    }
+    // delete currently selected if custom
+    const ch = channels[currentChannelIndex];
+    if (ch && ch.id && String(ch.id).startsWith('custom-')) {
+      deleteCustomChannel(ch.id);
+    } else {
+      alert(currentLang === 'vi' ? 'Chỉ xóa được kênh tự thêm' : 'Only custom channels can be deleted');
+    }
+  });
+}
+const btnCancelEdit = document.getElementById('btnCancelEdit');
+if (btnCancelEdit) {
+  btnCancelEdit.addEventListener('click', () => {
+    editingChannelId = null;
+    if (customName) customName.value = '';
+    if (customUrl) customUrl.value = '';
+    if (addBox) addBox.style.display = 'none';
+  });
+}
 if (btnLang) btnLang.addEventListener('click', () => {
   currentLang = currentLang === 'vi' ? 'en' : 'vi';
   localStorage.setItem('pi_vintage_lang', currentLang);
