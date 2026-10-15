@@ -2,20 +2,25 @@
 /* ---- Free channels by country (public HLS / official pages) ---- */
 const CHANNELS_BY_COUNTRY = {
   vn: [
-    { id: 'vtv1', name: 'CH-01 VTV1', category: 'VTV', url: 'OFFICIAL:https://vtv.vn/truyen-hinh-truc-tuyen/vtv1.htm', officialName: 'VTV1' },
-    { id: 'vtv2', name: 'CH-02 VTV2', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/2', officialName: 'VTV2' },
-    { id: 'vtv3', name: 'CH-03 VTV3', category: 'VTV', url: 'OFFICIAL:https://vtv.vn/truyen-hinh-truc-tuyen/vtv3.html', officialName: 'VTV3' },
-    { id: 'vtv4', name: 'CH-04 VTV4', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/4', officialName: 'VTV4' },
-    { id: 'vtv5', name: 'CH-05 VTV5', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/5', officialName: 'VTV5' },
-    { id: 'vtv5-tn', name: 'CH-06 VTV5 Tây Nguyên', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/6', officialName: 'VTV5 Tây Nguyên' },
-    { id: 'vtv5-tnb', name: 'CH-07 VTV5 Tây Nam Bộ', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/7', officialName: 'VTV5 Tây Nam Bộ' },
-    { id: 'vtv7', name: 'CH-08 VTV7', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/35', officialName: 'VTV7' },
-    { id: 'vtv8', name: 'CH-09 VTV8', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/36', officialName: 'VTV8' },
-    { id: 'vtv9', name: 'CH-10 VTV9', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/9', officialName: 'VTV9' },
-    { id: 'vtv-ct', name: 'CH-11 VTV Cần Thơ', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/37', officialName: 'VTV Cần Thơ' },
-    { id: 'htv7', name: 'CH-12 HTV7', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen?channel=1', officialName: 'HTV7' },
-    { id: 'htv9', name: 'CH-13 HTV9', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen?channel=2', officialName: 'HTV9' },
-    { id: 'static-vn', name: 'CH-14 Static', category: 'Special', url: 'STATIC' }
+    // Prefer direct public HLS so the CRT plays video (not an "Open Official" card)
+    { id: 'vtv1', name: 'CH-01 VTV1', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtv.vn/truyen-hinh-truc-tuyen/vtv1.htm', officialName: 'VTV1' },
+    { id: 'vtv2', name: 'CH-02 VTV2', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv2_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/2', officialName: 'VTV2' },
+    { id: 'vtv3', name: 'CH-03 VTV3', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv3hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtv.vn/truyen-hinh-truc-tuyen/vtv3.html', officialName: 'VTV3' },
+    { id: 'vtv4', name: 'CH-04 VTV4', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv4_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/4', officialName: 'VTV4' },
+    { id: 'vtv5', name: 'CH-05 VTV5', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv5hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/5', officialName: 'VTV5' },
+    { id: 'vtv7', name: 'CH-06 VTV7', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda3/vtv7hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/35', officialName: 'VTV7' },
+    { id: 'vtv8', name: 'CH-07 VTV8', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda2/vtv8hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/36', officialName: 'VTV8' },
+    { id: 'vtv9', name: 'CH-08 VTV9', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda2/vtv9_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/9', officialName: 'VTV9' },
+    { id: 'htv7', name: 'CH-09 HTV7', category: 'HTV', url: 'https://dethich.pw/htv7/index.m3u8', fallbackOfficial: 'https://www.htv.com.vn/truc-tuyen?channel=1', officialName: 'HTV7' },
+    { id: 'htv9', name: 'CH-10 HTV9', category: 'HTV', url: 'https://dethich.pw/htv9/index.m3u8', fallbackOfficial: 'https://www.htv.com.vn/truc-tuyen?channel=2', officialName: 'HTV9' },
+    { id: 'htv1', name: 'CH-11 HTV1', category: 'HTV', url: 'https://dethich.pw/htv1/index.m3u8', officialName: 'HTV1' },
+    { id: 'htv2', name: 'CH-12 HTV2', category: 'HTV', url: 'https://dethich.pw/htv2/index.m3u8', officialName: 'HTV2' },
+    { id: 'htv3', name: 'CH-13 HTV3', category: 'HTV', url: 'https://dethich.pw/htv3/index.m3u8', officialName: 'HTV3' },
+    { id: 'qpvn', name: 'CH-14 QPVN', category: 'News', url: 'https://qpvn.vn/live/qpvn/master.m3u8', officialName: 'QPVN' },
+    { id: 'antv', name: 'CH-15 ANTV', category: 'News', url: 'https://liveh12.vtvprime.vn/hls/ANNINHTV/index.m3u8', officialName: 'ANTV' },
+    { id: 'cantho', name: 'CH-16 Cần Thơ TV', category: 'Local', url: 'https://live.canthotv.vn/live/tv/chunklist.m3u8', officialName: 'Cần Thơ TV' },
+    { id: 'danang1', name: 'CH-17 Đà Nẵng 1', category: 'Local', url: 'https://live.mediatech.vn/live/285b59a111d76974225a8e3004bfc31a509/chunklist.m3u8', officialName: 'Đà Nẵng 1' },
+    { id: 'static-vn', name: 'CH-18 Static', category: 'Special', url: 'STATIC' }
   ],
   us: [
     { id: 'nasa', name: 'CH-01 NASA TV Public', category: 'USA', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Public/master.m3u8' },
@@ -80,6 +85,8 @@ let hls = null;
 let fitTimer = null;
 let staticWatchTimer = null;
 let editingChannelId = null;
+let userInteracted = false;
+let resolveTimer = null;
 let currentLang = localStorage.getItem('pi_vintage_lang') || 'vi';
 let lastPowerPress = 0;
 const POWER_DOUBLE_MS = 5000;
@@ -125,7 +132,8 @@ const i18n = {
     deleteChannel: 'Xóa',
     cancel: 'Hủy',
     editChannel: 'Sửa',
-    tunedIn: 'Đã khớp tín hiệu'
+    tunedIn: 'Đã khớp tín hiệu',
+    officialHint: 'Stream tạm thời không khả dụng. Thử kênh khác hoặc mở trang đài.'
   },
   en: {
     appTitle: 'Pi Vintage TV',
@@ -139,7 +147,8 @@ const i18n = {
     deleteChannel: 'Delete',
     cancel: 'Cancel',
     editChannel: 'Edit',
-    tunedIn: 'Signal locked'
+    tunedIn: 'Signal locked',
+    officialHint: 'Stream temporarily unavailable. Try another channel or open the broadcaster.'
   }
 };
 function t(key) {
@@ -349,14 +358,141 @@ function handlePowerOffOnly() {
 }
 
 
+
+function markInteracted() {
+  userInteracted = true;
+  enableVideoAudio();
+}
+
+function showOfficialCard(title, pageUrl) {
+  const officialWrap = document.getElementById('officialFrameWrap');
+  const officialTitle = document.getElementById('officialFrameTitle');
+  if (video) {
+    try { video.pause(); } catch (e) {}
+    video.removeAttribute('src');
+    try { video.load(); } catch (e) {}
+  }
+  if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+  playStaticSound(false);
+  if (officialWrap) {
+    officialWrap.style.display = 'flex';
+    if (officialTitle) officialTitle.textContent = title || 'Official';
+    const openLink = document.getElementById('officialOpenLink');
+    if (openLink && pageUrl) {
+      openLink.href = pageUrl;
+      openLink.textContent = currentLang === 'vi' ? 'Mở trang đài ▶' : 'Open Official ▶';
+    }
+  }
+}
+
+function enableVideoAudio() {
+  if (!video) return;
+  try {
+    video.muted = false;
+    video.defaultMuted = false;
+    if (video.volume < 0.2) video.volume = 1;
+    video.removeAttribute('muted');
+  } catch (e) {}
+}
+async function playVideoWithAudio() {
+  if (!video) return;
+  enableVideoAudio();
+  try {
+    await video.play();
+  } catch (e) {
+    // Autoplay with sound blocked — keep muted then retry unmute on next gesture
+    try {
+      video.muted = true;
+      await video.play();
+      if (userInteracted) {
+        enableVideoAudio();
+        video.play().catch(() => {});
+      }
+    } catch (e2) {
+      playStaticSound(true);
+    }
+  }
+}
+function playHlsStream(url) {
+  if (!video || !url) return;
+  if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+  enableVideoAudio();
+  if (typeof Hls !== 'undefined' && Hls.isSupported() && url.includes('.m3u8')) {
+    hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: false,
+      xhrSetup: function (xhr) {
+        try { xhr.withCredentials = false; } catch (e) {}
+      }
+    });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      playVideoWithAudio();
+      scheduleVideoFit();
+      scheduleStaticAutoOff();
+    });
+    hls.on(Hls.Events.ERROR, (e, data) => {
+      if (data && data.fatal) {
+        const ch = channels[currentChannelIndex];
+        if (ch && ch.fallbackOfficial) {
+          showOfficialCard(ch.officialName || ch.name, ch.fallbackOfficial);
+        } else {
+          playStaticSound(true);
+        }
+      }
+    });
+  } else if (video.canPlayType('application/vnd.apple.mpegurl') || url.includes('.m3u8')) {
+    video.src = url;
+    playVideoWithAudio().then(() => {
+      scheduleVideoFit();
+      scheduleStaticAutoOff();
+    });
+  } else {
+    video.src = url;
+    playVideoWithAudio().then(() => {
+      scheduleVideoFit();
+      scheduleStaticAutoOff();
+    });
+  }
+}
+
+/** After 10s on OFFICIAL page channel, ask server to scan page for .m3u8 */
+function scheduleOfficialResolve(pageUrl) {
+  if (resolveTimer) clearTimeout(resolveTimer);
+  resolveTimer = setTimeout(async () => {
+    if (!isPoweredOn) return;
+    const ch = channels[currentChannelIndex];
+    if (!ch || !ch.url || !ch.url.startsWith('OFFICIAL:')) return;
+    showOsd(currentLang === 'vi' ? 'Đang dò tín hiệu…' : 'Scanning signal…');
+    try {
+      const resp = await fetch('/api/resolve-stream?url=' + encodeURIComponent(pageUrl));
+      const data = await resp.json();
+      if (data && data.ok && data.streams && data.streams.length) {
+        const streamUrl = data.streams[0];
+        const wrap = document.getElementById('officialFrameWrap');
+        if (wrap) wrap.style.display = 'none';
+        playStaticSound(false);
+        playHlsStream(streamUrl);
+        showOsd(currentLang === 'vi' ? 'Đã khóa stream' : 'Stream locked');
+      } else {
+        showOsd(currentLang === 'vi' ? 'Không thấy m3u8 công khai' : 'No public m3u8 found');
+      }
+    } catch (e) {
+      showOsd(currentLang === 'vi' ? 'Lỗi dò tín hiệu' : 'Scan failed');
+    }
+  }, 10000);
+}
+
 function clearWatchTimers() {
   if (fitTimer) { clearTimeout(fitTimer); fitTimer = null; }
   if (staticWatchTimer) { clearTimeout(staticWatchTimer); staticWatchTimer = null; }
+  if (resolveTimer) { clearTimeout(resolveTimer); resolveTimer = null; }
   if (frameContainer) frameContainer.classList.remove('tuned-in');
   if (video) video.classList.remove('video-fitted');
 }
 
-/** After 5s of playback, fit video aspect into CRT for natural TV look */
+/** After 10s of playback, fit video aspect into CRT for natural TV look */
 function scheduleVideoFit() {
   if (fitTimer) clearTimeout(fitTimer);
   if (frameContainer) frameContainer.classList.remove('tuned-in');
@@ -382,7 +518,7 @@ function scheduleVideoFit() {
     video.classList.add('video-fitted');
     if (frameContainer) frameContainer.classList.add('tuned-in');
     showOsd(t('tunedIn'));
-  }, 5000);
+  }, 10000);
 }
 
 /** Auto-mute static noise after 3 minutes of continuous viewing */
@@ -479,36 +615,32 @@ function playChannel(index) {
     return;
   }
   if (ch.url && ch.url.startsWith('OFFICIAL:')) {
-    if (video) video.src = '';
+    // No full-page iframe. Show card, then after 10s try to extract public m3u8 via server.
+    if (video) {
+      try { video.pause(); } catch (e) {}
+      video.removeAttribute('src');
+      try { video.load(); } catch (e) {}
+    }
     playStaticSound(false);
     const pageUrl = ch.url.slice(9);
-    if (officialWrap && officialBody) {
+    if (officialWrap) {
       officialWrap.style.display = 'flex';
       if (officialTitle) officialTitle.textContent = ch.officialName || ch.name;
-      officialBody.innerHTML = '';
-      const iframe = document.createElement('iframe');
-      iframe.src = pageUrl;
-      iframe.allow = 'autoplay; fullscreen';
-      iframe.setAttribute('allowfullscreen', '');
-      iframe.style.cssText = 'width:100%;height:100%;border:0;background:#000;';
-      officialBody.appendChild(iframe);
+      const openLink = document.getElementById('officialOpenLink');
+      if (openLink) {
+        openLink.href = pageUrl;
+        openLink.textContent = currentLang === 'vi' ? 'Mở trang đài ▶' : 'Open Official ▶';
+      }
     }
+    scheduleOfficialResolve(pageUrl);
     return;
   }
   playStaticSound(false);
-  if (typeof Hls !== 'undefined' && Hls.isSupported() && ch.url.includes('.m3u8')) {
-    hls = new Hls({ enableWorker: true, lowLatencyMode: false });
-    hls.loadSource(ch.url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.ERROR, (e, data) => { if (data.fatal) playStaticSound(true); });
+  if (ch.url && (ch.url.includes('.m3u8') || ch.url.includes('.mpd') || ch.url.includes('.mp4'))) {
+    playHlsStream(ch.url);
   } else if (video) {
     video.src = ch.url;
-  }
-  if (video) {
-    video.play().then(() => { scheduleVideoFit(); scheduleStaticAutoOff(); }).catch(() => playStaticSound(true));
-  } else {
-    scheduleVideoFit();
-    scheduleStaticAutoOff();
+    playVideoWithAudio().then(() => { scheduleVideoFit(); scheduleStaticAutoOff(); });
   }
 }
 
@@ -645,13 +777,16 @@ const btnCloseOfficial = document.getElementById('btnCloseOfficial');
 if (btnCloseOfficial) {
   btnCloseOfficial.addEventListener('click', () => {
     const wrap = document.getElementById('officialFrameWrap');
-    const body = document.getElementById('officialFrameBody');
     if (wrap) wrap.style.display = 'none';
-    if (body) body.innerHTML = '';
     const first = channels.findIndex(c => c.url && !c.url.startsWith('OFFICIAL:') && c.url !== 'STATIC');
     if (first >= 0) playChannel(first);
+    else playChannel(0);
   });
 }
+
+['click', 'touchstart', 'keydown'].forEach(ev => {
+  document.addEventListener(ev, markInteracted, { once: false, passive: true });
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   loadCountry(currentCountry);
@@ -661,7 +796,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('pi_vintage_model') || 'tv-international-red';
   applyModel(MODEL_BADGES[saved] ? saved : 'tv-international-red');
   setPower(true);
-  setTimeout(() => playChannel(0), 400);
+  setTimeout(() => {
+    const vidIdx = channels.findIndex(c => c.url && !c.url.startsWith('OFFICIAL:') && c.url !== 'STATIC');
+    playChannel(vidIdx >= 0 ? vidIdx : 0);
+  }, 400);
 });
 
 window.__piVintageTv = {

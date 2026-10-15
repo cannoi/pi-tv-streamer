@@ -36,7 +36,7 @@
           <!-- CRT screen -->
           <div class="crt-bezel">
             <div class="crt-viewport" id="screenInner">
-              <video id="tvVideo" crossorigin="anonymous" playsinline autoplay muted></video>
+              <video id="tvVideo" playsinline autoplay></video>
               <canvas id="staticCanvas"></canvas>
               <div class="channel-osd" id="channelOsd">CH-01</div>
               <div class="scanlines"></div>
@@ -44,11 +44,12 @@
               <div class="crt-glow"></div>
               <div class="crt-glare"></div>
               <div class="official-frame-wrap" id="officialFrameWrap" style="display:none;">
-                <div class="official-frame-header">
-                  <span id="officialFrameTitle"></span>
-                  <button id="btnCloseOfficial" class="official-close-btn" data-i18n="backToChannels">◀ Channels</button>
+                <div class="official-card-inner">
+                  <div class="official-card-title" id="officialFrameTitle">Official</div>
+                  <p class="official-card-hint" data-i18n="officialHint">Stream tạm thời không khả dụng. Thử kênh khác hoặc mở trang đài.</p>
+                  <a id="officialOpenLink" class="official-open-btn" href="#" target="_blank" rel="noopener">Open Official ▶</a>
+                  <button type="button" id="btnCloseOfficial" class="official-close-btn" data-i18n="backToChannels">◀ Channels</button>
                 </div>
-                <div class="official-frame-body" id="officialFrameBody"></div>
               </div>
             </div>
           </div>
@@ -109,7 +110,7 @@
     </div>
 
     <div class="universal-controls" id="universalControls">
-      <button id="btnPower" class="ctrl-btn" title="Power">⏻</button>
+      <button id="btnPower" class="ctrl-btn btn-power" title="Power" aria-label="Power"><span class="power-icon" aria-hidden="true"></span></button>
       <button id="btnPrev" class="ctrl-btn" title="Prev">⏮</button>
       <button id="btnNext" class="ctrl-btn" title="Next">⏭</button>
       <select id="countrySelect" class="country-select" aria-label="Country" title="Country">
