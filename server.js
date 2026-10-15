@@ -133,6 +133,54 @@ app.get('/api/resolve-stream', async (req, res) => {
   }
 });
 
+
+/** Lightweight reachability probe for a stream URL (no body proxy). */
+app.get('/api/probe-stream', async (req, res) => {
+  const target = (req.query.url || '').trim();
+  if (!target || !/^https?:\/\//i.test(target)) {
+    return res.status(400).json({ ok: false, error: 'invalid_url' });
+  }
+  if (target === 'STATIC') return res.json({ ok: true, kind: 'static' });
+  if (target.startsWith('OFFICIAL:')) {
+    return res.json({ ok: true, kind: 'official', note: 'page_link' });
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    let resp = await fetch(target, {
+      method: 'HEAD',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 PiVintageTV/1.6' }
+    });
+    if (resp.status === 405 || resp.status === 501 || resp.status === 403) {
+      resp = await fetch(target, {
+        method: 'GET',
+        redirect: 'follow',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 PiVintageTV/1.6',
+          'Range': 'bytes=0-512'
+        }
+      });
+    }
+    clearTimeout(timeout);
+    const ok = resp.ok || resp.status === 206;
+    return res.status(200).json({
+      ok,
+      status: resp.status,
+      kind: target.includes('.m3u8') ? 'hls' : 'media'
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    return res.status(200).json({
+      ok: false,
+      error: err.name === 'AbortError' ? 'timeout' : 'fetch_failed'
+    });
+  }
+});
+
+
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Pi TV Streamer running on port ${PORT}`);
 }).on('error', (err) => {

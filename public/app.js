@@ -186,12 +186,65 @@ function setBwMode(on) {
 }
 
 /* ---- Country / channels ---- */
-function loadCountry(code) {
+
+const PROBE_CACHE_KEY = 'pi_vintage_probe_v1';
+function getProbeCache() {
+  try { return JSON.parse(sessionStorage.getItem(PROBE_CACHE_KEY) || '{}'); } catch (e) { return {}; }
+}
+function setProbeCache(map) {
+  try { sessionStorage.setItem(PROBE_CACHE_KEY, JSON.stringify(map)); } catch (e) {}
+}
+
+async function probeStreamUrl(url) {
+  if (!url || url === 'STATIC') return true;
+  if (url.startsWith('OFFICIAL:')) return false; // hide pure official cards from zap list
+  const cache = getProbeCache();
+  if (Object.prototype.hasOwnProperty.call(cache, url)) return !!cache[url];
+  try {
+    const resp = await fetch('/api/probe-stream?url=' + encodeURIComponent(url));
+    const data = await resp.json();
+    cache[url] = !!(data && data.ok);
+    setProbeCache(cache);
+    return cache[url];
+  } catch (e) {
+    cache[url] = false;
+    setProbeCache(cache);
+    return false;
+  }
+}
+
+async function filterLiveChannels(list) {
+  const out = [];
+  // Probe in parallel batches of 6
+  const batch = 6;
+  for (let i = 0; i < list.length; i += batch) {
+    const slice = list.slice(i, i + batch);
+    const results = await Promise.all(slice.map(async (ch) => {
+      if (ch.url === 'STATIC') return { ch, ok: true };
+      if (ch.url && ch.url.startsWith('OFFICIAL:')) return { ch, ok: false };
+      const ok = await probeStreamUrl(ch.url);
+      return { ch, ok };
+    }));
+    results.forEach(r => { if (r.ok) out.push(r.ch); });
+  }
+  // Always keep at least Static if everything dies
+  if (!out.length) {
+    const st = list.find(c => c.url === 'STATIC');
+    if (st) out.push(st);
+  }
+  // Renumber CH-xx labels for clean list
+  return out.map((ch, idx) => ({
+    ...ch,
+    name: ch.name.replace(/^CH-\d+\s*/, 'CH-' + String(idx + 1).padStart(2, '0') + ' ')
+  }));
+}
+
+
+async function loadCountry(code) {
   currentCountry = CHANNELS_BY_COUNTRY[code] ? code : 'vn';
   localStorage.setItem('pi_vintage_country', currentCountry);
   if (countrySelect) countrySelect.value = currentCountry;
   const base = [...(CHANNELS_BY_COUNTRY[currentCountry] || [])];
-  // Append custom channels from localStorage
   const saved = localStorage.getItem('pi_vintage_channels');
   if (saved) {
     try {
@@ -199,10 +252,12 @@ function loadCountry(code) {
       custom.forEach(c => base.push(c));
     } catch (e) {}
   }
-  channels = base;
+  showOsd(currentLang === 'vi' ? 'Đang lọc kênh…' : 'Filtering channels…');
+  channels = await filterLiveChannels(base);
   currentChannelIndex = 0;
   renderChannelSelect();
   if (isPoweredOn) playChannel(0);
+  else showOsd(channels[0] ? channels[0].name : '—');
 }
 
 function renderChannelSelect() {
@@ -435,10 +490,26 @@ function playHlsStream(url) {
     hls.on(Hls.Events.ERROR, (e, data) => {
       if (data && data.fatal) {
         const ch = channels[currentChannelIndex];
+        // Drop dead channel from zap list
+        if (ch && ch.url && ch.url !== 'STATIC') {
+          const cache = getProbeCache();
+          cache[ch.url] = false;
+          setProbeCache(cache);
+          channels = channels.filter(c => c.id !== ch.id);
+          if (!channels.length) {
+            channels = [{ id: 'static', name: 'CH-01 Static', category: 'Special', url: 'STATIC' }];
+          }
+          renderChannelSelect();
+        }
         if (ch && ch.fallbackOfficial) {
           showOfficialCard(ch.officialName || ch.name, ch.fallbackOfficial);
         } else {
           playStaticSound(true);
+          // Auto skip to next live channel
+          if (channels.length) {
+            const next = Math.min(currentChannelIndex, channels.length - 1);
+            setTimeout(() => playChannel(next), 400);
+          }
         }
       }
     });
@@ -648,7 +719,7 @@ function playChannel(index) {
 if (channelSelect) channelSelect.addEventListener('change', e => playChannel(parseInt(e.target.value, 10)));
 if (countrySelect) {
   countrySelect.value = currentCountry;
-  countrySelect.addEventListener('change', e => loadCountry(e.target.value));
+  countrySelect.addEventListener('change', e => { loadCountry(e.target.value); });
 }
 if (btnPower) {
   btnPower.addEventListener('click', () => {
@@ -770,7 +841,7 @@ if (btnLang) btnLang.addEventListener('click', () => {
   applyLanguage();
 });
 if (btnBw) btnBw.addEventListener('click', () => setBwMode(!isBwMode));
-if (modelSelect) modelSelect.addEventListener('change', e => applyModel(e.target.value));
+if (modelSelect) modelSelect.addEventListener('change', e => { applyModel(e.target.value); fitTvToViewport(); });
 if (video) video.addEventListener('error', () => playStaticSound(true));
 
 const btnCloseOfficial = document.getElementById('btnCloseOfficial');
@@ -788,7 +859,29 @@ if (btnCloseOfficial) {
   document.addEventListener(ev, markInteracted, { once: false, passive: true });
 });
 
+
+function fitTvToViewport() {
+  const frame = document.getElementById('tv-frame-container');
+  const shell = frame && frame.querySelector('.tv-shell');
+  if (!frame || !shell) return;
+  const header = document.querySelector('.app-header');
+  const controls = document.getElementById('universalControls');
+  const headerH = header ? header.getBoundingClientRect().height : 0;
+  const controlsH = controls && controls.offsetParent !== null ? controls.getBoundingClientRect().height : 0;
+  const pad = 12;
+  const availW = Math.max(280, window.innerWidth - pad * 2);
+  const availH = Math.max(220, window.innerHeight - headerH - controlsH - pad * 2);
+  // International shell ~ aspect ~ 1.55 wide including side panel
+  const targetW = Math.min(availW, availH * 1.55);
+  frame.style.width = targetW + 'px';
+  frame.style.maxWidth = '100%';
+  shell.style.setProperty('--u', (targetW / 100) + 'px');
+}
+window.addEventListener('resize', fitTvToViewport);
+window.addEventListener('orientationchange', () => setTimeout(fitTvToViewport, 120));
+
 window.addEventListener('DOMContentLoaded', () => {
+  fitTvToViewport();
   loadCountry(currentCountry);
   initCanvas();
   applyLanguage();
@@ -796,6 +889,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('pi_vintage_model') || 'tv-international-red';
   applyModel(MODEL_BADGES[saved] ? saved : 'tv-international-red');
   setPower(true);
+  fitTvToViewport();
   setTimeout(() => {
     const vidIdx = channels.findIndex(c => c.url && !c.url.startsWith('OFFICIAL:') && c.url !== 'STATIC');
     playChannel(vidIdx >= 0 ? vidIdx : 0);
