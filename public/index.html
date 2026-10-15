@@ -114,10 +114,20 @@
       <button id="btnPower" class="ctrl-btn" title="Power">⏻</button>
       <button id="btnPrev" class="ctrl-btn" title="Prev">⏮</button>
       <button id="btnNext" class="ctrl-btn" title="Next">⏭</button>
+      <select id="countrySelect" class="country-select" aria-label="Country" title="Country">
+        <option value="vn">🇻🇳 Việt Nam</option>
+        <option value="us">🇺🇸 USA</option>
+        <option value="jp">🇯🇵 Japan</option>
+        <option value="kr">🇰🇷 Korea</option>
+        <option value="eu">🇪🇺 Europe</option>
+        <option value="intl">🌍 International</option>
+      </select>
       <select id="channelSelect" class="channel-select" aria-label="Channel"></select>
       <button id="btnStatic" class="ctrl-btn" title="Static">📡</button>
+      <button id="btnCinema" class="ctrl-btn" title="TV only mode">⛶</button>
       <button id="btnAddModal" class="ctrl-btn" title="Add">＋</button>
     </div>
+    <button id="btnExitCinema" class="exit-cinema-btn" style="display:none;" title="Exit TV only">✕</button>
 
     <div class="custom-add-box" id="addBox" style="display:none;">
       <input type="text" id="customName" placeholder="Channel name">
