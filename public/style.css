@@ -990,3 +990,38 @@ body.cinema-mode .tv-stage {
   min-height: 100dvh;
   padding: 0 !important;
 }
+
+/* Fullscreen control on CRT (YouTube-like) */
+.fs-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 28;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.28);
+  background: rgba(0,0,0,0.55);
+  color: #eee;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  pointer-events: auto;
+}
+.fs-btn:hover { opacity: 1; background: rgba(0,0,0,0.75); }
+.fs-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  position: relative;
+}
+.fs-btn.is-fs .fs-icon {
+  width: 10px;
+  height: 10px;
+  border-width: 2px;
+}

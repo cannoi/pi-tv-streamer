@@ -903,3 +903,146 @@ window.__piVintageTv = {
   resumeCustomPlayer: () => { if (!isPoweredOn) return; playChannel(currentChannelIndex); },
   setCinemaMode
 };
+
+/* ---- Fullscreen (YouTube-style control on CRT) ---- */
+function toggleVideoFullscreen() {
+  const target = document.getElementById('screenInner') || document.getElementById('tv-frame-container');
+  if (!target) return;
+  if (!document.fullscreenElement) {
+    (target.requestFullscreen || target.webkitRequestFullscreen || target.msRequestFullscreen || (() => {})).call(target);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || (() => {})).call(document);
+  }
+}
+const btnFullscreen = document.getElementById('btnFullscreen');
+if (btnFullscreen) btnFullscreen.addEventListener('click', (e) => {
+  e.stopPropagation();
+  markInteracted();
+  toggleVideoFullscreen();
+});
+document.addEventListener('fullscreenchange', () => {
+  if (btnFullscreen) btnFullscreen.classList.toggle('is-fs', !!document.fullscreenElement);
+});
+
+/* ---- AI bridge: context + actions for universal AI panel ---- */
+function getAiContext() {
+  const ch = channels[currentChannelIndex] || null;
+  return {
+    app: 'Pi Vintage TV',
+    version: '1.7.0',
+    powered: !!isPoweredOn,
+    country: currentCountry,
+    theme: (frameContainer && frameContainer.getAttribute('data-model')) || 'tv-international-red',
+    channelIndex: currentChannelIndex,
+    channelName: ch ? ch.name : null,
+    channelCount: channels.length,
+    channels: channels.slice(0, 40).map((c, i) => ({ i, id: c.id, name: c.name, category: c.category })),
+    bw: !!isBwMode,
+    lang: currentLang
+  };
+}
+
+function runAiAction(name, args) {
+  args = args || {};
+  switch (name) {
+    case 'list_channels':
+      showOsd((currentLang === 'vi' ? 'Có ' : '') + channels.length + (currentLang === 'vi' ? ' kênh' : ' channels'));
+      return { ok: true, channels: getAiContext().channels };
+    case 'switch_channel': {
+      let idx = args.index;
+      if (idx === undefined && args.value !== undefined && !isNaN(Number(args.value))) idx = Number(args.value);
+      if (idx === undefined && (args.name || args.value)) {
+        const q = String(args.name || args.value).toLowerCase();
+        idx = channels.findIndex(c => (c.name || '').toLowerCase().includes(q) || (c.id || '').toLowerCase() === q);
+      }
+      if (idx >= 0 && idx < channels.length) {
+        playChannel(idx);
+        return { ok: true, channel: channels[idx].name };
+      }
+      return { ok: false, error: 'channel_not_found' };
+    }
+    case 'next_channel':
+      playChannel((currentChannelIndex + 1) % channels.length);
+      return { ok: true };
+    case 'prev_channel':
+      playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+      return { ok: true };
+    case 'add_channel': {
+      const name = String(args.name || args.title || '').trim();
+      const url = String(args.url || args.link || '').trim();
+      if (!name || !url) return { ok: false, error: 'name_and_url_required' };
+      const ch = {
+        id: 'custom-' + Date.now(),
+        name: 'CH-' + String(channels.length + 1).padStart(2, '0') + ' ' + name,
+        category: 'Custom',
+        url
+      };
+      const list = getCustomChannels();
+      list.push(ch);
+      saveCustomChannels(list);
+      channels.push(ch);
+      renderChannelSelect();
+      playChannel(channels.length - 1);
+      return { ok: true, channel: ch.name };
+    }
+    case 'remove_channel': {
+      const key = String(args.id || args.name || args.value || '').toLowerCase();
+      const ch = channels.find(c => (c.id || '').toLowerCase() === key || (c.name || '').toLowerCase().includes(key));
+      if (!ch) return { ok: false, error: 'not_found' };
+      if (ch.id && String(ch.id).startsWith('custom-')) {
+        deleteCustomChannel(ch.id);
+        return { ok: true, removed: ch.name };
+      }
+      // Allow removing non-custom from current session zap list only
+      channels = channels.filter(c => c.id !== ch.id);
+      renderChannelSelect();
+      if (channels.length) playChannel(0);
+      return { ok: true, removed: ch.name, sessionOnly: true };
+    }
+    case 'set_theme': {
+      const v = String(args.theme || args.value || args.name || '').toLowerCase();
+      const map = {
+        international: 'tv-international-red',
+        red: 'tv-international-red',
+        sampo: 'tv-sampo-cream',
+        cream: 'tv-sampo-cream',
+        samsung: 'tv-samsung-deluxe',
+        deluxe: 'tv-samsung-deluxe'
+      };
+      const model = map[v] || (MODEL_BADGES[v] ? v : null);
+      if (!model) return { ok: false, error: 'unknown_theme' };
+      applyModel(model);
+      if (modelSelect) modelSelect.value = model;
+      fitTvToViewport();
+      return { ok: true, theme: model };
+    }
+    case 'set_country': {
+      const code = String(args.country || args.value || args.code || '').toLowerCase();
+      if (!CHANNELS_BY_COUNTRY[code]) return { ok: false, error: 'unknown_country' };
+      loadCountry(code);
+      return { ok: true, country: code };
+    }
+    case 'toggle_power':
+      handlePowerPress();
+      return { ok: true, powered: isPoweredOn };
+    case 'toggle_bw':
+      setBwMode(!isBwMode);
+      return { ok: true, bw: isBwMode };
+    case 'toggle_fullscreen':
+      toggleVideoFullscreen();
+      return { ok: true };
+    case 'help':
+      showOsd(currentLang === 'vi' ? 'AI: chuyển/thêm/xóa kênh, theme, fullscreen' : 'AI: channels, theme, fullscreen');
+      return { ok: true };
+    default:
+      return { ok: false, error: 'unknown_action' };
+  }
+}
+
+// Extend public API
+window.__piVintageTv = Object.assign(window.__piVintageTv || {}, {
+  getAiContext,
+  runAiAction,
+  toggleVideoFullscreen,
+  channels: () => channels.slice()
+});
