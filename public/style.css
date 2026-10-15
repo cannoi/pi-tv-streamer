@@ -134,19 +134,23 @@ body.mode-bw .channel-osd { color: var(--amber); }
    ============================================================ */
 [data-model="tv-international-red"] .tv-shell { --sr: 1.32; --pw: calc(var(--u) * 17.5); --vr: calc(var(--u) * 5.2) / calc(var(--u) * 5.6); --glass-off: #8c937e; }
 [data-model="tv-international-red"] .tv-shell {
-  margin-top: calc(var(--u) * 17);
-  padding: calc(var(--u) * 9) calc(var(--u) * 1.5) calc(var(--u) * 2.2);
+  margin-top: calc(var(--u) * 14);
+  /* Even thin red rim on all sides */
+  padding: calc(var(--u) * 2.2) calc(var(--u) * 2.2) calc(var(--u) * 2.2);
   background: linear-gradient(180deg, #f4592e 0%, #e5421c 20%, #dc3a16 62%, #c02d11 100%);
-  border-radius: calc(var(--u) * 7) calc(var(--u) * 7) calc(var(--u) * 3.5) calc(var(--u) * 3.5) / calc(var(--u) * 8) calc(var(--u) * 8) calc(var(--u) * 3.5) calc(var(--u) * 3.5);
+  border-radius: calc(var(--u) * 5.5) calc(var(--u) * 5.5) calc(var(--u) * 3.2) calc(var(--u) * 3.2) / calc(var(--u) * 6) calc(var(--u) * 6) calc(var(--u) * 3.2) calc(var(--u) * 3.2);
   box-shadow: 0 calc(var(--u) * 1.6) calc(var(--u) * 3.4) rgba(70,12,0,.5), inset 0 calc(var(--u) * .35) calc(var(--u) * .6) rgba(255,255,255,.4), inset 0 calc(var(--u) * -.6) calc(var(--u) * 1.2) rgba(100,15,0,.45);
 }
 [data-model="tv-international-red"] .tv-shell::before {
-  content: ""; position: absolute; left: calc(var(--u) * 4); right: calc(var(--u) * 30); top: calc(var(--u) * 1.4); height: calc(var(--u) * 3.4); border-radius: calc(var(--u) * 3);
-  background: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0));
+  content: ""; position: absolute; left: calc(var(--u) * 3); right: calc(var(--u) * 28); top: calc(var(--u) * 0.6); height: calc(var(--u) * 1.4); border-radius: calc(var(--u) * 2);
+  background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0));
+  pointer-events: none;
 }
 [data-model="tv-international-red"] .tv-body {
   background: linear-gradient(180deg, #1c1c1c 0%, #0b0b0b 100%);
-  border-radius: calc(var(--u) * 3.4); padding: calc(var(--u) * 5.5) calc(var(--u) * 2.8) 0 calc(var(--u) * 6.3); column-gap: calc(var(--u) * 7);
+  border-radius: calc(var(--u) * 3.4);
+  padding: calc(var(--u) * 2.8) calc(var(--u) * 2.4) calc(var(--u) * 0.5) calc(var(--u) * 2.8);
+  column-gap: calc(var(--u) * 5);
   box-shadow: 0 0 0 calc(var(--u) * .22) #3a1208, inset 0 calc(var(--u) * .15) calc(var(--u) * .3) rgba(255,255,255,.12);
 }
 [data-model="tv-international-red"] .crt-bezel {
@@ -324,7 +328,10 @@ body.mode-bw .channel-osd { color: var(--amber); }
   flex: 0 0 calc(var(--u) * 7.4); width: calc(var(--u) * 17.5); display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * .55); padding: 0 calc(var(--u) * 1.4);
   background: #2b2b28; border-radius: calc(var(--u) * .6); box-shadow: 0 0 0 calc(var(--u) * .45) #cfcebd, 0 0 0 calc(var(--u) * .7) #6f6e60, inset 0 calc(var(--u) * .2) calc(var(--u) * .5) rgba(0,0,0,.8);
 }
-.m-vent i { display: block; height: calc(var(--u) * .75); background: linear-gradient(180deg, #e8e8de, #8d8d82); border-radius: calc(var(--u) * .3); transform: skewY(-3deg); }
+.m-vent i { display: block; height: calc(var(--u) * .55); background: linear-gradient(180deg, #e8e8de, #8d8d82); border-radius: calc(var(--u) * .3); transform: skewY(-3deg); }
+.m-vent i:nth-child(1),
+.m-vent i:nth-child(3) { height: calc(var(--u) * 1.05); }
+.m-vent i:nth-child(2) { height: calc(var(--u) * 0.45); opacity: 0.9; }
 .m-script {
   flex: 0 0 calc(var(--u) * 2.6); font: italic 400 calc(var(--u) * 2.2)/1 "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive; font-size: calc(var(--u) * 2.3);
   color: #8b5a4b; text-align: center; margin-top: calc(var(--u) * .4);
@@ -367,7 +374,23 @@ body.mode-bw .channel-osd { color: var(--amber); }
   color: #f1f1e8; font: 800 calc(var(--u) * 1.5)/1 Arial, Helvetica, sans-serif; font-size: calc(var(--u) * 1.45); letter-spacing: calc(var(--u) * .1);
   box-shadow: 0 0 0 calc(var(--u) * .22) #c8c7b6, 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(0,0,0,.5);
 }
-.m-cell-brand .power-led { position: absolute; right: calc(var(--u) * 1.1); top: 50%; margin-top: calc(var(--u) * -.55); }
+.m-cell-brand .power-led,
+.m-cell-brand .headphone-jack {
+  position: absolute; right: calc(var(--u) * 1.1); top: 50%; margin-top: calc(var(--u) * -.55);
+  /* Headphone jack — dark circular socket, never red */
+  width: calc(var(--u) * 1.35) !important;
+  height: calc(var(--u) * 1.35) !important;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #3a3a36 0%, #121210 55%, #0a0a08 100%) !important;
+  border: calc(var(--u) * 0.22) solid #5a5a52 !important;
+  box-shadow: inset 0 calc(var(--u) * 0.2) calc(var(--u) * 0.35) rgba(0,0,0,.85), 0 0 0 calc(var(--u) * 0.12) #2a2a26 !important;
+}
+/* Prevent power-on red style on the jack */
+.tv-frame-container:not(.powered-off) .m-cell-brand .power-led,
+.tv-frame-container:not(.powered-off) .m-cell-brand .headphone-jack {
+  background: radial-gradient(circle at 40% 35%, #3a3a36 0%, #121210 55%, #0a0a08 100%) !important;
+  box-shadow: inset 0 calc(var(--u) * 0.2) calc(var(--u) * 0.35) rgba(0,0,0,.85), 0 0 0 calc(var(--u) * 0.12) #2a2a26 !important;
+}
 
 /* motion preference */
 @media (prefers-reduced-motion: reduce) { .spin { transition: none; } }
@@ -474,3 +497,80 @@ body.cinema-mode .channel-osd {
   backdrop-filter: blur(4px);
 }
 .exit-cinema-btn:hover { background: rgba(40,40,40,0.9); }
+
+
+/* ============================================================
+   Full-viewport fit: portrait & landscape
+   ============================================================ */
+html, body {
+  width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+body {
+  justify-content: flex-start;
+}
+.tv-stage {
+  width: 100%;
+  max-width: min(960px, 100%);
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+.tv-frame-container {
+  width: 100%;
+  max-width: min(720px, 100%);
+}
+
+/* Landscape phones / short height: shrink TV to fit viewport */
+@media (orientation: landscape) and (max-height: 520px) {
+  body { padding: 4px 8px 8px; gap: 6px; }
+  .app-header { padding: 4px 2px; }
+  .brand-title { font-size: 0.95rem; }
+  .tv-stage { gap: 8px; }
+  .tv-frame-container { max-width: min(640px, 92vw); }
+  .tv-shell { --u: calc(min(640px, 92vw) / 100) !important; }
+  .universal-controls { padding: 6px 8px; gap: 5px; }
+  .ctrl-btn { width: 34px; height: 34px; font-size: 0.95rem; }
+}
+
+@media (orientation: landscape) and (min-height: 521px) and (max-height: 700px) {
+  body { padding: 6px 10px 16px; }
+  .tv-frame-container { max-width: min(700px, 88vw); }
+}
+
+/* Portrait tall phones: use more width */
+@media (orientation: portrait) and (max-width: 480px) {
+  body { padding: 0 6px 24px; }
+  .tv-frame-container { max-width: 100%; }
+  .tv-shell { --u: calc((100vw - 12px) / 100) !important; }
+}
+
+/* Large screens: allow bigger TV */
+@media (min-width: 1100px) and (min-height: 800px) {
+  .tv-stage, .app-header { max-width: 1100px; }
+  .tv-frame-container { max-width: 860px; }
+  .universal-controls { max-width: 860px; }
+}
+
+/* Cinema / TV-only fills available space */
+body.cinema-mode {
+  min-height: 100dvh;
+  justify-content: center;
+  padding: 8px;
+}
+body.cinema-mode .tv-stage {
+  max-width: min(960px, 100%);
+  min-height: calc(100dvh - 16px);
+  justify-content: center;
+}
+body.cinema-mode .tv-frame-container {
+  max-width: min(820px, 100%);
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  body.cinema-mode { padding: 4px; }
+  body.cinema-mode .tv-frame-container { max-width: min(700px, 94vw); }
+}
