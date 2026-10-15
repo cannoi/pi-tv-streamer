@@ -1,5 +1,4 @@
-/* Pi Vintage TV — Authentic Vietnamese Retro Museum
-   Streaming logic preserved; presentation = 5 historical brands */
+/* Pi Vintage TV — 3 photo-matched retro frames + streaming */
 const streamChannels = [
   { id: 'vtv1', name: 'CH-01 VTV1 HD', category: 'Stream', url: 'https://live.vnpt-media.vn/vtv1_1080p/index.m3u8' },
   { id: 'vtv3', name: 'CH-02 VTV3 HD', category: 'Stream', url: 'https://live.vnpt-media.vn/vtv3_1080p/index.m3u8' },
@@ -38,42 +37,29 @@ const canvas = document.getElementById('staticCanvas');
 const ctx = canvas.getContext('2d');
 const channelSelect = document.getElementById('channelSelect');
 const channelOsd = document.getElementById('channelOsd');
-const powerKnob = document.getElementById('powerKnob');
-const dialKnob = document.getElementById('dialKnob');
-const powerKnobBottom = document.getElementById('powerKnobBottom');
-const dialKnobBottom = document.getElementById('dialKnobBottom');
 const btnStatic = document.getElementById('btnStatic');
 const btnAddModal = document.getElementById('btnAddModal');
 const addBox = document.getElementById('addBox');
 const btnSaveCustom = document.getElementById('btnSaveCustom');
 const customName = document.getElementById('customName');
 const customUrl = document.getElementById('customUrl');
-const tvCabinet = document.getElementById('tvCabinet');
-const screenBezel = document.getElementById('screenBezel');
+const frameContainer = document.getElementById('tv-frame-container');
 const btnPower = document.getElementById('btnPower');
 const btnPrev = document.getElementById('btnPrev');
 const btnNext = document.getElementById('btnNext');
 const btnLang = document.getElementById('btnLang');
-const btnTheme = document.getElementById('btnTheme');
 const btnBw = document.getElementById('btnBw');
-const brandStrip = document.getElementById('brandStrip');
+const modelSelect = document.getElementById('tv-model-select');
 
-/* ===== i18n ===== */
+const MODEL_BADGES = {
+  'tv-international-red': 'INTERNATIONAL',
+  'tv-sampo-cream': 'SAMPO',
+  'tv-samsung-deluxe': 'SAMSUNG'
+};
+
 const i18n = {
-  vi: {
-    appTitle: 'Bảo Tàng TV Việt',
-    saveChannel: 'Lưu kênh',
-    backToChannels: '◀ Kênh thường',
-    national: 'National', sharp: 'Sharp', sony: 'Sony Trinitron',
-    rubin: 'Rubin', viettronics: 'Viettronics'
-  },
-  en: {
-    appTitle: 'Vietnam TV Museum',
-    saveChannel: 'Save Channel',
-    backToChannels: '◀ Regular Channels',
-    national: 'National', sharp: 'Sharp', sony: 'Sony Trinitron',
-    rubin: 'Rubin', viettronics: 'Viettronics'
-  }
+  vi: { appTitle: 'Pi Vintage TV', saveChannel: 'Lưu kênh', backToChannels: '◀ Kênh thường' },
+  en: { appTitle: 'Pi Vintage TV', saveChannel: 'Save Channel', backToChannels: '◀ Channels' }
 };
 function t(key) {
   return (i18n[currentLang] && i18n[currentLang][key]) || i18n.en[key] || key;
@@ -83,40 +69,36 @@ function applyLanguage() {
     const key = el.getAttribute('data-i18n');
     if (key) el.textContent = t(key);
   });
-  btnLang.textContent = currentLang === 'vi' ? '🌐 EN' : '🌐 VI';
+  if (btnLang) btnLang.textContent = currentLang === 'vi' ? '🌐 EN' : '🌐 VI';
   document.documentElement.lang = currentLang;
 }
 
-/* ===== 5 Historical Brands ===== */
-const THEMES = {
-  national:    { brand: 'NATIONAL',     label: 'National' },
-  sharp:       { brand: 'SHARP',        label: 'Sharp' },
-  sony:        { brand: 'Sony Trinitron', label: 'Sony' },
-  rubin:       { brand: 'РУБИН',        label: 'Rubin' },
-  viettronics: { brand: 'VIETTRONICS',  label: 'Viettronics' }
-};
-
-function applyTheme(themeId) {
-  if (!THEMES[themeId]) themeId = 'national';
-  const theme = THEMES[themeId];
-  tvCabinet.dataset.theme = themeId;
-  localStorage.setItem('pi_vintage_theme', themeId);
-  const brandEl = document.getElementById('tvBrand');
-  if (brandEl) brandEl.textContent = theme.brand;
-  // Brand strip active state
-  document.querySelectorAll('.brand-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.theme === themeId);
-  });
+function applyModel(modelId) {
+  if (!MODEL_BADGES[modelId]) modelId = 'tv-international-red';
+  frameContainer.dataset.model = modelId;
+  localStorage.setItem('pi_vintage_model', modelId);
+  if (modelSelect) modelSelect.value = modelId;
+  const badge = document.getElementById('tvBrand');
+  if (badge) badge.textContent = MODEL_BADGES[modelId];
+  const spBadge = document.getElementById('speakerBadge');
+  if (spBadge) {
+    if (modelId === 'tv-international-red') spBadge.textContent = '14';
+    else spBadge.textContent = '';
+  }
+  const frontBrand = document.getElementById('frontBrand');
+  if (frontBrand) {
+    frontBrand.textContent = modelId === 'tv-sampo-cream' ? 'SAMPO' : '';
+  }
+  const panelBrand = document.getElementById('panelBrand');
+  if (panelBrand) {
+    panelBrand.textContent = modelId === 'tv-samsung-deluxe' ? 'SAMSUNG' : '';
+  }
+  const bezelBrand = document.getElementById('bezelBrand');
+  if (bezelBrand) {
+    bezelBrand.textContent = modelId === 'tv-international-red' ? 'INTERNATIONAL' : '';
+  }
 }
 
-function cycleTheme() {
-  const ids = Object.keys(THEMES);
-  const current = tvCabinet.dataset.theme || 'national';
-  const next = ids[(ids.indexOf(current) + 1) % ids.length];
-  applyTheme(next);
-}
-
-/* ===== B&W / Color ===== */
 function setBwMode(on) {
   isBwMode = on;
   document.body.classList.toggle('mode-bw', on);
@@ -124,7 +106,6 @@ function setBwMode(on) {
   localStorage.setItem('pi_vintage_bw', on ? '1' : '0');
 }
 
-/* ===== Channels & playback (preserved logic) ===== */
 function loadStoredChannels() {
   const saved = localStorage.getItem('pi_vintage_channels');
   if (saved) {
@@ -186,32 +167,25 @@ function playStaticSound(enable) {
     filter.connect(gain);
     gain.connect(audioCtx.destination);
     noiseNode.start();
-  } else {
-    if (noiseNode) {
-      noiseNode.stop();
-      noiseNode.disconnect();
-      noiseNode = null;
-    }
+  } else if (noiseNode) {
+    noiseNode.stop();
+    noiseNode.disconnect();
+    noiseNode = null;
   }
 }
 function showOsd(text) {
-  // Format like retro OSD: CH-01
   channelOsd.textContent = text;
   channelOsd.classList.add('show');
   setTimeout(() => channelOsd.classList.remove('show'), 2400);
 }
 function setPower(on) {
   isPoweredOn = on;
-  tvCabinet.classList.toggle('powered-off', !on);
+  frameContainer.classList.toggle('powered-off', !on);
   btnPower.classList.toggle('active', on);
   if (on) {
-    if (powerKnob) powerKnob.style.transform = 'rotate(0deg)';
-    if (powerKnobBottom) powerKnobBottom.style.transform = 'rotate(0deg)';
     video.style.display = 'block';
     playChannel(currentChannelIndex);
   } else {
-    if (powerKnob) powerKnob.style.transform = 'rotate(90deg)';
-    if (powerKnobBottom) powerKnobBottom.style.transform = 'rotate(90deg)';
     video.pause();
     video.style.display = 'none';
     playStaticSound(false);
@@ -222,11 +196,10 @@ function playChannel(index) {
   if (index < 0 || index >= channels.length) return;
   currentChannelIndex = index;
   channelSelect.value = index;
+  frameContainer.style.setProperty('--ch-rot', (index * 30) + 'deg');
   const ch = channels[index];
   showOsd(ch.name);
-
   if (!isPoweredOn) return;
-
   if (hls) { hls.destroy(); hls = null; }
 
   const officialWrap = document.getElementById('officialFrameWrap');
@@ -240,7 +213,6 @@ function playChannel(index) {
     playStaticSound(true);
     return;
   }
-
   if (ch.url && ch.url.startsWith('OFFICIAL:')) {
     video.src = '';
     playStaticSound(false);
@@ -255,55 +227,44 @@ function playChannel(index) {
       iframe.setAttribute('allowfullscreen', '');
       iframe.style.cssText = 'width:100%;height:100%;border:0;background:#000;';
       officialBody.appendChild(iframe);
-      const fallback = document.createElement('div');
-      fallback.style.cssText = 'text-align:center;padding:12px;';
-      const a = document.createElement('a');
-      a.href = pageUrl; a.target = '_blank'; a.rel = 'noopener';
-      a.className = 'btn primary'; a.textContent = 'Open Official Site';
-      fallback.appendChild(a);
-      officialBody.appendChild(fallback);
     }
     return;
   }
-
   playStaticSound(false);
-
   if (Hls.isSupported() && ch.url.includes('.m3u8')) {
     hls = new Hls({ enableWorker: true, lowLatencyMode: false });
     hls.loadSource(ch.url);
     hls.attachMedia(video);
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      if (data.fatal) playStaticSound(true);
-    });
-  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = ch.url;
+    hls.on(Hls.Events.ERROR, (e, data) => { if (data.fatal) playStaticSound(true); });
   } else {
     video.src = ch.url;
   }
   video.play().catch(() => playStaticSound(true));
 }
 
-/* ===== Event listeners ===== */
-channelSelect.addEventListener('change', (e) => {
-  playChannel(parseInt(e.target.value, 10));
-});
-if (powerKnob) powerKnob.addEventListener('click', () => setPower(!isPoweredOn));
-if (powerKnobBottom) powerKnobBottom.addEventListener('click', () => setPower(!isPoweredOn));
+/* Events */
+channelSelect.addEventListener('change', e => playChannel(parseInt(e.target.value, 10)));
 btnPower.addEventListener('click', () => setPower(!isPoweredOn));
-
-function nextChannel() {
+/* Physical knobs on the TV frames: .act-channel = channel dial, .act-power = power / OFF-VOL knob */
+function bindKnob(el, handler) {
+  el.addEventListener('click', handler);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
+  });
+}
+document.querySelectorAll('.act-power').forEach(el => bindKnob(el, () => setPower(!isPoweredOn)));
+document.querySelectorAll('.act-channel').forEach(el => bindKnob(el, () => {
   if (!isPoweredOn) return;
   playChannel((currentChannelIndex + 1) % channels.length);
-}
-function prevChannel() {
+}));
+btnNext.addEventListener('click', () => {
+  if (!isPoweredOn) return;
+  playChannel((currentChannelIndex + 1) % channels.length);
+});
+btnPrev.addEventListener('click', () => {
   if (!isPoweredOn) return;
   playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
-}
-if (dialKnob) dialKnob.addEventListener('click', nextChannel);
-if (dialKnobBottom) dialKnobBottom.addEventListener('click', nextChannel);
-btnNext.addEventListener('click', nextChannel);
-btnPrev.addEventListener('click', prevChannel);
-
+});
 btnStatic.addEventListener('click', () => {
   if (!isPoweredOn) return;
   const idx = channels.findIndex(c => c.url === 'STATIC');
@@ -322,33 +283,24 @@ btnSaveCustom.addEventListener('click', () => {
   channels.push({
     id: 'custom-' + Date.now(),
     name: 'CH-' + String(channels.length + 1).padStart(2, '0') + ' ' + name,
-    category: 'Custom',
-    url
+    category: 'Custom', url
   });
   const customOnly = channels.filter(c => !defaultChannels.some(d => d.id === c.id));
   localStorage.setItem('pi_vintage_channels', JSON.stringify(customOnly));
   renderChannelSelect();
-  customName.value = '';
-  customUrl.value = '';
+  customName.value = ''; customUrl.value = '';
   addBox.style.display = 'none';
   playChannel(channels.length - 1);
 });
-
 btnLang.addEventListener('click', () => {
   currentLang = currentLang === 'vi' ? 'en' : 'vi';
   localStorage.setItem('pi_vintage_lang', currentLang);
   applyLanguage();
 });
-if (btnTheme) btnTheme.addEventListener('click', () => cycleTheme());
 if (btnBw) btnBw.addEventListener('click', () => setBwMode(!isBwMode));
-
-// Brand strip chips
-if (brandStrip) {
-  brandStrip.querySelectorAll('.brand-chip').forEach(chip => {
-    chip.addEventListener('click', () => applyTheme(chip.dataset.theme));
-  });
+if (modelSelect) {
+  modelSelect.addEventListener('change', e => applyModel(e.target.value));
 }
-
 video.addEventListener('error', () => playStaticSound(true));
 
 const btnCloseOfficial = document.getElementById('btnCloseOfficial');
@@ -358,30 +310,25 @@ if (btnCloseOfficial) {
     const body = document.getElementById('officialFrameBody');
     if (wrap) wrap.style.display = 'none';
     if (body) body.innerHTML = '';
-    const firstStream = channels.findIndex(c => c.url && !c.url.startsWith('OFFICIAL:') && c.url !== 'STATIC');
-    if (firstStream >= 0) playChannel(firstStream);
+    const first = channels.findIndex(c => c.url && !c.url.startsWith('OFFICIAL:') && c.url !== 'STATIC');
+    if (first >= 0) playChannel(first);
   });
 }
 
-/* ===== Init ===== */
 window.addEventListener('DOMContentLoaded', () => {
   loadStoredChannels();
   renderChannelSelect();
   initCanvas();
   applyLanguage();
   setBwMode(isBwMode);
-
-  const savedTheme = localStorage.getItem('pi_vintage_theme') || 'national';
-  applyTheme(THEMES[savedTheme] ? savedTheme : 'national');
-
+  const saved = localStorage.getItem('pi_vintage_model') || 'tv-international-red';
+  applyModel(MODEL_BADGES[saved] ? saved : 'tv-international-red');
   setPower(true);
   setTimeout(() => playChannel(0), 400);
 });
 
-/* Hook for tv-hub.js (kept intact) */
 window.__piVintageTv = {
-  video,
-  channelOsd,
+  video, channelOsd,
   isStaticPlaying: () => !!noiseNode,
   pauseCustomPlayer: () => { playStaticSound(false); video.pause(); },
   resumeCustomPlayer: () => { if (!isPoweredOn) return; playChannel(currentChannelIndex); }

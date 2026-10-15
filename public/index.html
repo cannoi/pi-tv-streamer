@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1a1210">
-  <title>Pi Vintage TV — Bảo Tàng TV Việt</title>
+  <meta name="theme-color" content="#1a100e">
+  <title>Pi Vintage TV</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <link rel="stylesheet" href="style.css">
   <style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style>
@@ -13,112 +13,119 @@
   <header class="app-header">
     <div class="brand-title">
       <span class="icon">📺</span>
-      <span data-i18n="appTitle">Bảo Tàng TV Việt</span>
+      <span data-i18n="appTitle">Pi Vintage TV</span>
     </div>
     <div class="header-actions">
-      <!-- B&W / Color toggle -->
-      <button id="btnBw" class="btn-bw" title="B&W / Color" aria-label="Toggle black and white">
+      <button id="btnBw" class="btn-bw" title="B&W / Color" aria-label="Toggle B&W">
         <span class="bw-label">B&W</span>
       </button>
-      <!-- Single theme cycle: half black / half white -->
-      <button id="btnTheme" class="btn-theme-cycle" title="Đổi thương hiệu TV" aria-label="Change brand"></button>
-      <button id="btnLang" class="btn-icon" title="Language / Ngôn ngữ">🌐</button>
+      <select id="tv-model-select" class="model-select" aria-label="TV Model" title="TV Model">
+        <option value="tv-international-red">International Red</option>
+        <option value="tv-sampo-cream">SAMPO Cream</option>
+        <option value="tv-samsung-deluxe">Samsung Deluxe</option>
+      </select>
+      <button id="btnLang" class="btn-icon" title="Language">🌐</button>
     </div>
   </header>
 
-  <!-- Brand strip (quick select) -->
-  <nav class="brand-strip" id="brandStrip" aria-label="TV Brands">
-    <button type="button" class="brand-chip" data-theme="national" title="National">NATIONAL</button>
-    <button type="button" class="brand-chip" data-theme="sharp" title="Sharp">SHARP</button>
-    <button type="button" class="brand-chip" data-theme="sony" title="Sony Trinitron">SONY</button>
-    <button type="button" class="brand-chip" data-theme="rubin" title="Rubin">РУБИН</button>
-    <button type="button" class="brand-chip" data-theme="viettronics" title="Viettronics">VIETTRONICS</button>
-  </nav>
-
   <main class="tv-stage">
-    <div class="tv-cabinet" id="tvCabinet" data-theme="national">
-      <div class="tv-brand" id="tvBrand">NATIONAL</div>
+    <div class="tv-frame-container" id="tv-frame-container" data-model="tv-international-red">
+      <div class="tv-shell">
+        <!-- Antenna (rabbit ears: International / telescopic rod: SAMPO / none: Samsung) -->
+        <div class="antenna" aria-hidden="true"><i class="rod r1"></i><i class="rod r2"></i><i class="ant-base"></i></div>
 
-      <div class="tv-body">
-        <!-- CRT Screen -->
-        <div class="screen-bezel" id="screenBezel">
-          <div class="crt-screen-container" id="screenInner">
-            <video id="tvVideo" crossorigin="anonymous" playsinline autoplay muted></video>
-            <canvas id="staticCanvas"></canvas>
-            <div class="channel-osd" id="channelOsd">CH-01</div>
-            <div class="scanlines"></div>
-            <div class="crt-vignette"></div>
-            <div class="crt-glow"></div>
-            <div class="official-frame-wrap" id="officialFrameWrap" style="display:none;">
-              <div class="official-frame-header">
-                <span id="officialFrameTitle"></span>
-                <button id="btnCloseOfficial" class="official-close-btn" data-i18n="backToChannels">◀ Kênh thường</button>
+        <div class="tv-body">
+          <!-- CRT screen -->
+          <div class="crt-bezel">
+            <div class="crt-viewport" id="screenInner">
+              <video id="tvVideo" crossorigin="anonymous" playsinline autoplay muted></video>
+              <canvas id="staticCanvas"></canvas>
+              <div class="channel-osd" id="channelOsd">CH-01</div>
+              <div class="scanlines"></div>
+              <div class="crt-vignette"></div>
+              <div class="crt-glow"></div>
+              <div class="crt-glare"></div>
+              <div class="official-frame-wrap" id="officialFrameWrap" style="display:none;">
+                <div class="official-frame-header">
+                  <span id="officialFrameTitle"></span>
+                  <button id="btnCloseOfficial" class="official-close-btn" data-i18n="backToChannels">◀ Channels</button>
+                </div>
+                <div class="official-frame-body" id="officialFrameBody"></div>
               </div>
-              <div class="official-frame-body" id="officialFrameBody"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Side physical controls -->
-        <div class="side-panel" id="sidePanel">
-          <div class="knob-group">
-            <div class="knob" id="powerKnob" title="Power">
-              <div class="knob-line"></div>
+          <!-- Logos under the screen (International: bezel logo / SAMPO: front logo) -->
+          <div class="bezel-brand" id="bezelBrand">INTERNATIONAL</div>
+          <div class="front-brand" id="frontBrand">SAMPO</div>
+
+          <!-- Right control panel: one real panel layout per model -->
+          <div class="side-panel" id="sidePanel">
+
+            <!-- 1. INTERNATIONAL (red): 2 red pods with numbered dials, chrome speaker lines + "14" badge, 2 chrome buttons -->
+            <div class="pnl pnl-intl">
+              <div class="pod">
+                <div class="i-dial act-channel" id="dialKnob" role="button" tabindex="0" title="Channel" aria-label="Channel">
+                  <div class="i-ring"><i class="num" style="--a:30">1</i><i class="num" style="--a:60">2</i><i class="num" style="--a:90">3</i><i class="num" style="--a:120">4</i><i class="num" style="--a:150">5</i><i class="num" style="--a:180">6</i><i class="num" style="--a:210">7</i><i class="num" style="--a:240">8</i><i class="num" style="--a:270">9</i><i class="num" style="--a:300">10</i><i class="num" style="--a:330">11</i><i class="num" style="--a:0">12</i></div>
+                  <div class="i-knob spin"><i class="lever"></i></div>
+                </div>
+              </div>
+              <div class="pod">
+                <div class="i-dial act-power" id="powerKnob" role="button" tabindex="0" title="Power / UHF" aria-label="Power">
+                  <div class="i-ring"><i class="num" style="--a:30">1</i><i class="num" style="--a:60">2</i><i class="num" style="--a:90">3</i><i class="num" style="--a:120">4</i><i class="num" style="--a:150">5</i><i class="num" style="--a:180">6</i><i class="num" style="--a:210">7</i><i class="num" style="--a:240">8</i><i class="num" style="--a:270">9</i><i class="num" style="--a:300">10</i><i class="num" style="--a:330">11</i><i class="num" style="--a:0">12</i></div>
+                  <div class="i-knob i-knob2"><i class="cap"></i></div>
+                </div>
+              </div>
+              <div class="i-speaker"><div class="i-badge"><small>AC-DC</small><b id="speakerBadge">14</b></div></div>
+              <div class="i-bottom"><i class="i-btn"></i><i class="power-led" id="powerLed" title="Power"></i><i class="i-btn"></i></div>
             </div>
-            <span class="label">POWER</span>
-          </div>
-          <div class="knob-group">
-            <div class="knob" id="dialKnob" title="Channel / Tuner">
-              <div class="knob-line"></div>
+
+            <!-- 2. SAMPO (cream): black panel, 2 silver ribbed dials with tick ring, dotted speaker, CONTRAST / OFF-VOL -->
+            <div class="pnl pnl-sampo">
+              <div class="s-dial s-dial-a act-channel" role="button" tabindex="0" title="Channel" aria-label="Channel"><i class="ticks"></i><i class="s-knob spin"><i class="mark"></i></i></div>
+              <div class="s-dial s-dial-b act-power" role="button" tabindex="0" title="Power / UHF" aria-label="Power"><i class="ticks"></i><i class="s-knob"><i class="mark"></i></i></div>
+              <div class="s-speaker"></div>
+              <div class="s-bottom">
+                <div class="s-mini"><span>CONTRAST</span><i class="s-k"></i></div>
+                <div class="s-mini"><span>OFF·VOL</span><i class="s-k act-power" role="button" tabindex="0" title="Power" aria-label="Power"></i></div>
+              </div>
             </div>
-            <span class="label">TUNER</span>
-          </div>
-          <div class="speaker-grille" id="speakerGrille">
-            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
-            <div class="slot"></div><div class="slot"></div><div class="slot"></div>
-            <div class="slot"></div>
+
+            <!-- 3. SAMSUNG Deluxe: louver vent, Deluxe script, black dial in window, 3 knobs, 5 grille cells + SAMSUNG plate -->
+            <div class="pnl pnl-sams">
+              <div class="m-vent"><i></i><i></i><i></i></div>
+              <div class="m-script" id="panelDeluxe">Deluxe</div>
+              <div class="m-window"><div class="m-dial act-channel" role="button" tabindex="0" title="Channel" aria-label="Channel"><i class="m-lever spin"></i><i class="m-hub"></i></div></div>
+              <div class="m-strip"><span>CONTRAST</span><span>BRIGHT</span><span>TURN-ON/VOL</span></div>
+              <div class="m-knobs"><i class="m-k"></i><i class="m-k"></i><i class="m-k act-power" role="button" tabindex="0" title="Power" aria-label="Power"></i></div>
+              <div class="m-speaker">
+                <i class="m-cell"></i><i class="m-cell"></i><i class="m-cell"></i><i class="m-cell"></i>
+                <div class="m-cell m-cell-brand"><span class="m-plate" id="panelBrand">SAMSUNG</span><i class="power-led" title="Power"></i></div>
+              </div>
+            </div>
+
           </div>
         </div>
+        <div class="tv-foot" aria-hidden="true"></div>
       </div>
-
-      <!-- Bottom panel (used by some brands) -->
-      <div class="control-panel" id="controlPanel">
-        <div class="knob-group">
-          <div class="knob" id="powerKnobBottom" title="Power"><div class="knob-line"></div></div>
-          <span class="label">POWER</span>
-        </div>
-        <div class="knob-group">
-          <div class="knob" id="dialKnobBottom" title="Tuner"><div class="knob-line"></div></div>
-          <span class="label">TUNER</span>
-        </div>
-        <div class="speaker-grille bottom-speaker">
-          <div class="slot"></div><div class="slot"></div><div class="slot"></div>
-          <div class="slot"></div><div class="slot"></div>
-        </div>
-      </div>
-
-      <!-- Wooden legs (Sony / Rubin style) -->
-      <div class="tv-legs" aria-hidden="true"></div>
     </div>
 
-    <!-- Channel bar -->
     <div class="universal-controls" id="universalControls">
       <button id="btnPower" class="ctrl-btn" title="Power">⏻</button>
-      <button id="btnPrev" class="ctrl-btn" title="Previous">⏮</button>
+      <button id="btnPrev" class="ctrl-btn" title="Prev">⏮</button>
       <button id="btnNext" class="ctrl-btn" title="Next">⏭</button>
       <select id="channelSelect" class="channel-select" aria-label="Channel"></select>
       <button id="btnStatic" class="ctrl-btn" title="Static">📡</button>
-      <button id="btnAddModal" class="ctrl-btn" title="Add Channel">＋</button>
+      <button id="btnAddModal" class="ctrl-btn" title="Add">＋</button>
     </div>
 
     <div class="custom-add-box" id="addBox" style="display:none;">
-      <input type="text" id="customName" placeholder="Tên kênh / Channel name">
-      <input type="text" id="customUrl" placeholder="URL stream (.m3u8)">
-      <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Lưu kênh</button>
+      <input type="text" id="customName" placeholder="Channel name">
+      <input type="text" id="customUrl" placeholder="Stream URL (.m3u8)">
+      <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Save</button>
     </div>
   </main>
 
-  <!-- Hidden stubs so tv-hub.js does not throw -->
   <div id="tvHubSection" style="display:none" aria-hidden="true">
     <div id="tvHubTabs"></div>
     <div id="tvHubGrid"></div>

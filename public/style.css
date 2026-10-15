@@ -1,6 +1,9 @@
 /* ============================================================
-   Pi Vintage TV — 6 Authentic Retro Frames (1970s–1980s VN)
-   Optimized & Standardized Version
+   Pi Vintage TV — 3 Authentic Frames from real photos
+   1. International Red (default)
+   2. SAMPO Cream
+   3. Samsung Deluxe
+   Pure CSS/HTML only — no images (v1.6.0 redesign)
    ============================================================ */
 :root {
   --bg: #0e0d0b;
@@ -40,77 +43,46 @@ body { display: flex; flex-direction: column; align-items: center; padding: 0 12
 .model-select {
   background: var(--surface2); color: var(--text); border: 1px solid #3a3530;
   border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-family: inherit;
-  max-width: 160px; cursor: pointer;
+  max-width: 170px; cursor: pointer;
 }
 
 /* Stage */
 .tv-stage { width: 100%; max-width: 820px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
-/* Frame container */
-.tv-frame-container {
-  width: 100%; max-width: 700px;
-  position: relative;
-}
-.tv-shell {
-  position: relative;
-  padding: 14px 14px 12px;
-  transition: background 0.4s ease, border-color 0.4s ease, border-radius 0.35s ease;
-}
-.tv-brand-badge {
-  text-align: center; font-family: var(--mono); font-weight: bold;
-  letter-spacing: 3px; font-size: 12px; margin-bottom: 8px;
-  transition: color 0.3s;
-}
-.tv-body { display: flex; gap: 10px; align-items: stretch; }
+/* ============================================================
+   TV FRAMES — pure CSS/HTML, no images.
+   Every size is written in "u" units = 1% of the TV width, so each
+   TV keeps exactly the same proportions on any screen size.
+   (build step turns  calc(var(--u) * 3.2)  into  calc(var(--u) * 3.2) )
+   ============================================================ */
+.tv-frame-container { width: 100%; max-width: 680px; position: relative; container-type: inline-size; isolation: isolate; }
+.tv-shell { --u: calc(min(680px, 100vw - 24px) / 100); position: relative; }
+@supports (width: 1cqw) { .tv-shell { --u: 1cqw; } }
 
-/* CRT Viewport & Effects */
-.crt-bezel {
-  flex: 1 1 auto; min-width: 0;
-  background: #0a0a0a;
-  border: 8px solid #050505;
-  border-radius: 14px / 11px;
-  padding: 10px;
-  box-shadow: inset 0 6px 16px rgba(0,0,0,0.9);
-}
+.tv-body { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) var(--pw); grid-template-rows: auto auto; }
+.crt-bezel { grid-area: 1 / 1; position: relative; min-width: 0; }
 .crt-viewport {
-  background: #020202;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  position: relative;
-  overflow: hidden;
-  border-radius: 8% / 10%;
-  box-shadow: inset 0 0 40px rgba(0,0,0,0.9);
+  position: relative; width: 100%; aspect-ratio: var(--sr);
+  overflow: hidden; border-radius: var(--vr);
+  background: #040504; transition: background 0.3s;
 }
-video, #staticCanvas, .scanlines, .crt-vignette, .crt-glow {
+video, #staticCanvas, .scanlines, .crt-vignette, .crt-glow, .crt-glare {
   position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
 }
 video {
   object-fit: cover; z-index: 1;
-  filter: contrast(112%) brightness(94%) saturate(92%);
+  filter: contrast(112%) brightness(94%) saturate(90%);
   transition: filter 0.35s;
 }
-body.mode-bw video,
-body.mode-bw .bw-filter {
-  filter: grayscale(100%) contrast(120%) brightness(90%) sepia(10%);
-}
-#staticCanvas { opacity: 0.15; mix-blend-mode: screen; z-index: 2; }
+body.mode-bw video { filter: grayscale(100%) contrast(120%) brightness(90%) sepia(12%); }
+#staticCanvas { opacity: 0.14; mix-blend-mode: screen; z-index: 2; }
 .scanlines {
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0,0,0,0) 0px,
-    rgba(0,0,0,0.3) 2px,
-    rgba(0,0,0,0) 4px
-  );
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0.28) 2px, rgba(0,0,0,0) 4px);
   z-index: 3;
 }
-.crt-vignette {
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
-  z-index: 4;
-}
-.crt-glow {
-  background: radial-gradient(ellipse at 50% 40%, rgba(160,180,140,0.03) 0%, transparent 55%);
-  z-index: 5;
-}
+.crt-vignette { background: radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,0.55) 100%); z-index: 4; }
+.crt-glow { background: radial-gradient(ellipse at 50% 40%, rgba(160,180,140,0.03) 0%, transparent 55%); z-index: 5; }
+.crt-glare { background: linear-gradient(128deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 32%); z-index: 6; }
 .channel-osd {
   position: absolute; top: 12px; left: 14px;
   color: var(--green); font-family: var(--mono); font-size: 14px; font-weight: bold;
@@ -121,94 +93,289 @@ body.mode-bw .bw-filter {
 .channel-osd.show { opacity: 1; }
 body.mode-bw .channel-osd { color: var(--amber); }
 
-/* Side panel shared structure */
-.side-panel {
-  flex: 0 0 100px;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 8px; padding: 4px 2px;
+/* Shared parts */
+.bezel-brand, .front-brand { grid-area: 2 / 1; display: none; }
+.side-panel { grid-area: 1 / 2 / span 2; position: relative; min-width: 0; }
+.pnl { display: none; height: 100%; flex-direction: column; }
+.antenna, .tv-foot { position: absolute; pointer-events: none; display: none; }
+.num {
+  position: absolute; left: 50%; top: 50%; font-style: normal; font-weight: 700; line-height: 1;
+  transform: translate(-50%, -50%) rotate(calc(var(--a) * 1deg)) translateY(calc(var(--r) * -1)) rotate(calc(var(--a) * -1deg));
 }
-.panel-shutter {
-  width: 90%; height: 10px;
-  background: repeating-linear-gradient(90deg, #222 0 2px, #333 2px 4px);
-  border-radius: 2px; opacity: 0.7;
+.spin {
+  transform: rotate(calc(var(--base, 0deg) + var(--ch-rot, 0deg)));
+  transition: transform 0.45s cubic-bezier(0.3, 1.35, 0.5, 1);
 }
-.dial-channel {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #c8c4bc 0%, #6a6660 100%);
-  border: 3px solid #3a3834;
-  position: relative; cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-  transition: transform 0.1s ease;
-}
-.dial-channel:active { transform: scale(0.96); }
-.dial-face {
-  position: absolute; inset: 4px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.dial-num {
-  position: absolute; font-size: 6px; color: #222; font-family: var(--mono); font-weight: bold;
-}
-.dial-num:nth-child(1)  { top: 2px; left: 50%; transform: translateX(-50%); }
-.dial-num:nth-child(2)  { top: 6px; right: 8px; }
-.dial-num:nth-child(3)  { top: 16px; right: 2px; }
-.dial-num:nth-child(4)  { bottom: 16px; right: 2px; }
-.dial-num:nth-child(5)  { bottom: 6px; right: 8px; }
-.dial-num:nth-child(6)  { bottom: 2px; left: 50%; transform: translateX(-50%); }
-.dial-num:nth-child(7)  { bottom: 6px; left: 8px; }
-.dial-num:nth-child(8)  { bottom: 16px; left: 2px; }
-.dial-num:nth-child(9)  { top: 16px; left: 2px; }
-.dial-num:nth-child(10) { top: 6px; left: 6px; }
-.dial-num:nth-child(11) { top: 10px; left: 14px; }
-.dial-num:nth-child(12) { top: 10px; right: 14px; }
-.dial-pointer {
-  width: 3px; height: 14px; background: #1a1a1a; border-radius: 1px;
-  position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
-}
-.dial-uhf {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #b0aca4 0%, #555 100%);
-  border: 2px solid #333; cursor: pointer; position: relative;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-}
-.uhf-face { position: absolute; inset: 3px; border-radius: 50%; }
-.uhf-line {
-  width: 2.5px; height: 10px; background: #1a1a1a;
-  position: absolute; top: 2px; left: 50%; transform: translateX(-50%); border-radius: 1px;
-}
-.mini-knobs { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
-.mini-knob {
-  width: 18px; height: 18px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #888 0%, #333 100%);
-  border: 1.5px solid #222; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-.mini-extra { display: none; }
-.speaker-area { width: 90%; margin-top: auto; text-align: center; }
-.speaker-grill {
-  height: 36px;
-  background: repeating-linear-gradient(0deg, #1a1a1a 0 2px, #2a2a2a 2px 4px);
-  border-radius: 3px; border: 1px solid #111;
-}
-.speaker-badge {
-  font-size: 7px; letter-spacing: 1px; font-family: var(--mono); font-weight: bold;
-  margin-top: 3px; opacity: 0.7;
-}
+[role="button"] { cursor: pointer; }
+[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .power-led {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #1a1a1a; border: 1px solid #333;
-  box-shadow: none; transition: background 0.2s, box-shadow 0.2s;
+  display: block; width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); border-radius: 50%;
+  background: #2a1210; box-shadow: inset 0 0 0 calc(var(--u) * .15) rgba(0,0,0,.6);
+  transition: background .2s, box-shadow .2s;
 }
-.tv-frame-container:not(.powered-off) .power-led {
-  background: #e03030;
-  box-shadow: 0 0 6px rgba(224,48,48,0.8);
+.tv-frame-container:not(.powered-off) .power-led { background: #ff3b2a; box-shadow: 0 0 calc(var(--u) * .9) rgba(255,59,42,.85), inset 0 0 0 calc(var(--u) * .15) rgba(120,0,0,.5); }
+
+/* Powered off: the CRT glass shows the grey-green reflective tube like the real sets */
+.tv-frame-container.powered-off .crt-viewport { background: var(--glass-off); }
+.tv-frame-container.powered-off video,
+.tv-frame-container.powered-off #staticCanvas,
+.tv-frame-container.powered-off .scanlines,
+.tv-frame-container.powered-off .crt-vignette,
+.tv-frame-container.powered-off .crt-glow { opacity: 0 !important; visibility: hidden; }
+.tv-frame-container.powered-off .crt-glare {
+  background:
+    radial-gradient(ellipse 70% 55% at 28% 22%, rgba(255,255,255,0.26), rgba(255,255,255,0) 70%),
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0.18) 100%);
 }
-.bottom-knobs {
-  display: none; justify-content: center; gap: 12px; margin-top: 10px; padding: 0 20px;
+
+/* ============================================================
+   1. INTERNATIONAL — glossy orange-red shell, black face plate,
+      2 red pods with numbered dials, rabbit-ear antenna (default)
+   ============================================================ */
+[data-model="tv-international-red"] .tv-shell { --sr: 1.32; --pw: calc(var(--u) * 17.5); --vr: calc(var(--u) * 5.2) / calc(var(--u) * 5.6); --glass-off: #8c937e; }
+[data-model="tv-international-red"] .tv-shell {
+  margin-top: calc(var(--u) * 17);
+  padding: calc(var(--u) * 9) calc(var(--u) * 1.5) calc(var(--u) * 2.2);
+  background: linear-gradient(180deg, #f4592e 0%, #e5421c 20%, #dc3a16 62%, #c02d11 100%);
+  border-radius: calc(var(--u) * 7) calc(var(--u) * 7) calc(var(--u) * 3.5) calc(var(--u) * 3.5) / calc(var(--u) * 8) calc(var(--u) * 8) calc(var(--u) * 3.5) calc(var(--u) * 3.5);
+  box-shadow: 0 calc(var(--u) * 1.6) calc(var(--u) * 3.4) rgba(70,12,0,.5), inset 0 calc(var(--u) * .35) calc(var(--u) * .6) rgba(255,255,255,.4), inset 0 calc(var(--u) * -.6) calc(var(--u) * 1.2) rgba(100,15,0,.45);
 }
-.tv-legs { display: none; position: absolute; left: 12%; right: 12%; bottom: -24px; height: 26px; z-index: -1; }
+[data-model="tv-international-red"] .tv-shell::before {
+  content: ""; position: absolute; left: calc(var(--u) * 4); right: calc(var(--u) * 30); top: calc(var(--u) * 1.4); height: calc(var(--u) * 3.4); border-radius: calc(var(--u) * 3);
+  background: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0));
+}
+[data-model="tv-international-red"] .tv-body {
+  background: linear-gradient(180deg, #1c1c1c 0%, #0b0b0b 100%);
+  border-radius: calc(var(--u) * 3.4); padding: calc(var(--u) * 5.5) calc(var(--u) * 2.8) 0 calc(var(--u) * 6.3); column-gap: calc(var(--u) * 7);
+  box-shadow: 0 0 0 calc(var(--u) * .22) #3a1208, inset 0 calc(var(--u) * .15) calc(var(--u) * .3) rgba(255,255,255,.12);
+}
+[data-model="tv-international-red"] .crt-bezel {
+  padding: calc(var(--u) * .9); background: #050505; border-radius: calc(var(--u) * 6) / calc(var(--u) * 6.4);
+  box-shadow: 0 0 0 calc(var(--u) * .5) #181818, inset 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(255,255,255,.1);
+}
+[data-model="tv-international-red"] .bezel-brand {
+  display: flex; align-items: center; justify-content: center; height: calc(var(--u) * 5.6);
+  color: #ecece6; font: 700 calc(var(--u) * 1.5)/1 "Arial Narrow", "Helvetica Neue", Arial, sans-serif; letter-spacing: calc(var(--u) * .1);
+}
+[data-model="tv-international-red"] .bezel-brand { font-size: calc(var(--u) * 1.5); }
+[data-model="tv-international-red"] .pnl-intl { display: flex; margin: calc(var(--u) * -1.7) 0 calc(var(--u) * 2); }
+[data-model="tv-international-red"] .antenna { display: block; left: calc(var(--u) * 66); top: calc(var(--u) * -15); width: calc(var(--u) * 14); height: calc(var(--u) * 16.5); }
+[data-model="tv-international-red"] .rod {
+  position: absolute; bottom: calc(var(--u) * 1.4); width: calc(var(--u) * .55); height: calc(var(--u) * 15); border-radius: calc(var(--u) * .3); transform-origin: 50% 100%;
+  background: linear-gradient(90deg, #7d7263, #d8d1c4 50%, #7d7263);
+}
+[data-model="tv-international-red"] .r1 { left: calc(var(--u) * 4.2); transform: rotate(-3deg); }
+[data-model="tv-international-red"] .r2 { left: calc(var(--u) * 8.1); transform: rotate(4deg); }
+[data-model="tv-international-red"] .ant-base {
+  position: absolute; left: calc(var(--u) * 2.6); bottom: 0; width: calc(var(--u) * 7.2); height: calc(var(--u) * 2.3);
+  background: linear-gradient(180deg, #333, #0c0c0c); border-radius: calc(var(--u) * .7) calc(var(--u) * .7) calc(var(--u) * .3) calc(var(--u) * .3);
+}
+[data-model="tv-international-red"] .tv-foot {
+  display: block; left: 9%; right: 9%; bottom: calc(var(--u) * -.9); height: calc(var(--u) * 1.4); z-index: -1;
+  background: #7e1d0a; border-radius: 0 0 calc(var(--u) * 1) calc(var(--u) * 1);
+}
+/* panel pieces */
+.pod {
+  flex: 0 0 calc(var(--u) * 12.7); display: grid; place-items: center; margin-bottom: calc(var(--u) * .6);
+  background: linear-gradient(160deg, #ef4e26 0%, #dc3a16 55%, #c22e11 100%);
+  border-radius: calc(var(--u) * 1.5); box-shadow: inset 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(255,255,255,.35), inset 0 calc(var(--u) * -.3) calc(var(--u) * .6) rgba(90,10,0,.5), 0 0 0 calc(var(--u) * .2) #000;
+}
+.i-dial { position: relative; width: calc(var(--u) * 11.6); height: calc(var(--u) * 11.6); border-radius: 50%; }
+.i-ring {
+  position: absolute; inset: 0; border-radius: 50%; --r: calc(var(--u) * 4.55);
+  background: radial-gradient(circle at 38% 30%, #3a3a3a 0%, #141414 55%, #050505 100%);
+  box-shadow: 0 calc(var(--u) * .2) calc(var(--u) * .5) rgba(0,0,0,.6), inset 0 0 0 calc(var(--u) * .22) #4a4a4a;
+}
+.i-ring .num { color: #f4f4ef; font-size: calc(var(--u) * 1.15); font-family: Arial, Helvetica, sans-serif; }
+.i-knob {
+  --base: -25deg;
+  position: absolute; left: 50%; top: 50%; width: calc(var(--u) * 5.9); height: calc(var(--u) * 5.9); margin: calc(var(--u) * -2.95) 0 0 calc(var(--u) * -2.95); border-radius: 50%;
+  background: conic-gradient(from 0deg, #f6f6f6, #8a8a8a, #fafafa, #6f6f6f, #f1f1f1, #8d8d8d, #fafafa, #707070, #f6f6f6);
+  box-shadow: 0 calc(var(--u) * .25) calc(var(--u) * .6) rgba(0,0,0,.65), inset 0 0 0 calc(var(--u) * .22) #4a4a4a;
+}
+.i-knob::after { content: ""; position: absolute; inset: 22%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fdfdfd, #9a9a9a 75%); box-shadow: inset 0 0 0 calc(var(--u) * .15) rgba(0,0,0,.35); }
+.lever { position: absolute; z-index: 2; left: 50%; top: 50%; width: calc(var(--u) * 1.7); height: calc(var(--u) * 8.4); margin: calc(var(--u) * -4.2) 0 0 calc(var(--u) * -.85); border-radius: calc(var(--u) * .8); background: linear-gradient(90deg, #111, #3b3b3b 50%, #0a0a0a); box-shadow: 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(0,0,0,.6); }
+.i-knob2 { --base: 0deg; }
+.i-knob2 .cap { position: absolute; z-index: 2; left: 50%; top: 50%; width: calc(var(--u) * 1.5); height: calc(var(--u) * 1.5); margin: calc(var(--u) * -.75); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #555, #111); }
+.i-speaker {
+  flex: 1 1 auto; position: relative; margin: calc(var(--u) * 1.2) 0 calc(var(--u) * 1.6); border-radius: calc(var(--u) * .5); min-height: calc(var(--u) * 10);
+  background: repeating-linear-gradient(180deg, #ececE6 0 calc(var(--u) * .26), #0c0c0c calc(var(--u) * .26) calc(var(--u) * 1.15));
+  box-shadow: 0 0 0 calc(var(--u) * .22) #000, 0 0 0 calc(var(--u) * .5) #1e1e1e;
+}
+.i-badge {
+  position: absolute; left: 50%; top: 50%; width: calc(var(--u) * 7.4); height: calc(var(--u) * 7.4); margin: calc(var(--u) * -3.7) 0 0 calc(var(--u) * -3.7); border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * .1);
+  background: radial-gradient(circle at 35% 28%, #f2f2f2, #9d9d9d 70%, #6f6f6f);
+  box-shadow: 0 calc(var(--u) * .2) calc(var(--u) * .5) rgba(0,0,0,.7), inset 0 0 0 calc(var(--u) * .25) #555; color: #1a1a1a; font-family: Arial, Helvetica, sans-serif;
+}
+.i-badge small { font-size: calc(var(--u) * .95); font-weight: 700; line-height: 1; letter-spacing: calc(var(--u) * .05); }
+.i-badge b { font-size: calc(var(--u) * 2.7); font-weight: 800; line-height: 1; }
+.i-bottom { flex: 0 0 calc(var(--u) * 4); display: flex; align-items: center; justify-content: space-between; padding: 0 calc(var(--u) * 1.6); }
+.i-btn {
+  width: calc(var(--u) * 3.1); height: calc(var(--u) * 3.1); border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #1a1a1a 0 22%, #cfcfcf 24% 55%, #7e7e7e 100%);
+  box-shadow: 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(0,0,0,.7), inset 0 0 0 calc(var(--u) * .2) #5a5a5a;
+}
+
+/* ============================================================
+   2. SAMPO — ivory body, black wrap-around face plate,
+      2 silver ribbed dials, dotted speaker, CONTRAST / OFF·VOL
+   ============================================================ */
+[data-model="tv-sampo-cream"] .tv-shell { --sr: 1.18; --pw: calc(var(--u) * 19); --vr: calc(var(--u) * 7) / calc(var(--u) * 7.6); --glass-off: #7e8576; }
+[data-model="tv-sampo-cream"] .tv-shell {
+  margin-top: calc(var(--u) * 19);
+  padding: calc(var(--u) * 3) calc(var(--u) * 3.2) calc(var(--u) * 7.6);
+  background: linear-gradient(158deg, #f8f2e1 0%, #eee5cd 46%, #dacfb0 100%);
+  border-radius: calc(var(--u) * 7);
+  box-shadow: 0 calc(var(--u) * 1.6) calc(var(--u) * 3.4) rgba(40,30,10,.42), inset 0 calc(var(--u) * .3) calc(var(--u) * .5) rgba(255,255,255,.75), inset calc(var(--u) * -.5) calc(var(--u) * -.7) calc(var(--u) * 1.4) rgba(120,100,60,.38);
+}
+[data-model="tv-sampo-cream"] .tv-shell::after {
+  content: ""; position: absolute; left: 24%; width: 46%; bottom: calc(var(--u) * 2.7); height: calc(var(--u) * 2.1);
+  background: repeating-linear-gradient(90deg, #8a7e64 0 calc(var(--u) * .35), transparent calc(var(--u) * .35) calc(var(--u) * 1.45));
+  opacity: .85;
+}
+[data-model="tv-sampo-cream"] .tv-body {
+  background: linear-gradient(180deg, #181818 0%, #080808 100%);
+  border-radius: calc(var(--u) * 5.8); padding: calc(var(--u) * 4) calc(var(--u) * 2.8) 0 calc(var(--u) * 4.5); column-gap: calc(var(--u) * 3);
+  box-shadow: 0 0 0 calc(var(--u) * .2) #b9ad8f, inset 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(255,255,255,.12);
+}
+[data-model="tv-sampo-cream"] .crt-bezel {
+  padding: calc(var(--u) * 1.2); background: #000; border-radius: calc(var(--u) * 8) / calc(var(--u) * 8.6);
+  box-shadow: 0 0 0 calc(var(--u) * .4) #1b1b1b, inset 0 calc(var(--u) * .2) calc(var(--u) * .6) rgba(255,255,255,.12);
+}
+[data-model="tv-sampo-cream"] .front-brand {
+  display: flex; align-items: center; justify-content: flex-start; height: calc(var(--u) * 8); padding-left: calc(var(--u) * 8);
+  color: #f2f2ee; font-weight: 800; font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  font-size: calc(var(--u) * 2.1); letter-spacing: calc(var(--u) * .38);
+}
+[data-model="tv-sampo-cream"] .pnl-sampo { display: flex; margin: 0 0 calc(var(--u) * 1.6); align-items: center; }
+[data-model="tv-sampo-cream"] .antenna { display: block; left: calc(var(--u) * 17); top: calc(var(--u) * -17); width: calc(var(--u) * 14); height: calc(var(--u) * 18); }
+[data-model="tv-sampo-cream"] .rod {
+  position: absolute; left: calc(var(--u) * 6.5); bottom: calc(var(--u) * 1); width: calc(var(--u) * .6); height: calc(var(--u) * 17); transform-origin: 50% 100%; transform: rotate(-34deg);
+  background: linear-gradient(90deg, #8a8a8a, #f2f2f2 50%, #8a8a8a); border-radius: calc(var(--u) * .3);
+}
+[data-model="tv-sampo-cream"] .rod::after { content: ""; position: absolute; left: 50%; top: calc(var(--u) * -.9); width: calc(var(--u) * 1.3); height: calc(var(--u) * 1.3); margin-left: calc(var(--u) * -.65); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #8a8a8a); }
+[data-model="tv-sampo-cream"] .r2 { display: none; }
+[data-model="tv-sampo-cream"] .ant-base { position: absolute; left: calc(var(--u) * 5); bottom: 0; width: calc(var(--u) * 3.6); height: calc(var(--u) * 1.6); background: linear-gradient(180deg, #555, #1a1a1a); border-radius: calc(var(--u) * .6); }
+[data-model="tv-sampo-cream"] .tv-foot { display: block; left: 0; right: 0; bottom: calc(var(--u) * -1); height: calc(var(--u) * 1.6); z-index: -1; }
+[data-model="tv-sampo-cream"] .tv-foot::before, [data-model="tv-sampo-cream"] .tv-foot::after {
+  content: ""; position: absolute; bottom: 0; width: calc(var(--u) * 10); height: calc(var(--u) * 1.6); background: #cfc3a4; border-radius: 0 0 calc(var(--u) * .8) calc(var(--u) * .8);
+}
+[data-model="tv-sampo-cream"] .tv-foot::before { left: calc(var(--u) * 11); }
+[data-model="tv-sampo-cream"] .tv-foot::after { right: calc(var(--u) * 11); }
+.s-dial { position: relative; border-radius: 50%; flex: 0 0 auto; }
+.s-dial-a { width: calc(var(--u) * 15.5); height: calc(var(--u) * 15.5); margin-bottom: calc(var(--u) * 1.2); }
+.s-dial-b { width: calc(var(--u) * 12.6); height: calc(var(--u) * 12.6); margin-bottom: calc(var(--u) * 1.6); }
+.s-dial .ticks {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(from -7deg, #f1f1ee 0 1.6deg, transparent 1.6deg 14deg);
+  -webkit-mask-image: radial-gradient(circle, transparent 66%, #000 68%, #000 100%);
+          mask-image: radial-gradient(circle, transparent 66%, #000 68%, #000 100%);
+}
+.s-knob {
+  --base: 0deg; position: absolute; inset: 11%; border-radius: 50%;
+  background:
+    radial-gradient(circle, #d9d9d9 0 36%, transparent 37%),
+    repeating-conic-gradient(#c9c9c9 0 4deg, #6d6d6d 4deg 8deg);
+  box-shadow: 0 calc(var(--u) * .3) calc(var(--u) * .7) rgba(0,0,0,.8), inset 0 0 0 calc(var(--u) * .25) #3a3a3a;
+}
+.s-knob::before { content: ""; position: absolute; inset: 24%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fafafa, #9c9c9c 70%, #6a6a6a); box-shadow: inset 0 0 0 calc(var(--u) * .15) rgba(0,0,0,.4); }
+.s-knob .mark { position: absolute; left: 50%; top: 4%; width: calc(var(--u) * .55); height: 22%; margin-left: calc(var(--u) * -.28); background: #1a1a1a; border-radius: calc(var(--u) * .3); z-index: 2; }
+.s-speaker {
+  flex: 1 1 auto; width: 100%; min-height: calc(var(--u) * 9); margin-bottom: calc(var(--u) * 1.4); border-radius: calc(var(--u) * 1.4);
+  background: radial-gradient(circle, #5a5a5a 0 calc(var(--u) * .26), transparent calc(var(--u) * .32)) 0 0 / calc(var(--u) * .95) calc(var(--u) * .95), #0d0d0d;
+  box-shadow: inset 0 0 0 calc(var(--u) * .2) #2a2a2a;
+}
+.s-bottom { width: 100%; display: flex; justify-content: space-around; align-items: flex-end; flex: 0 0 auto; }
+.s-mini { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .6); }
+.s-mini span { color: #e9e9e4; font: 700 calc(var(--u) * 1)/1 Arial, Helvetica, sans-serif; font-size: calc(var(--u) * 1); letter-spacing: calc(var(--u) * .02); white-space: nowrap; }
+.s-k {
+  display: block; width: calc(var(--u) * 4.4); height: calc(var(--u) * 4.4); border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fafafa 0 18%, transparent 19%), repeating-conic-gradient(#dcdcdc 0 6deg, #a2a2a2 6deg 12deg);
+  box-shadow: 0 calc(var(--u) * .25) calc(var(--u) * .5) rgba(0,0,0,.8), inset 0 0 0 calc(var(--u) * .22) #3a3a3a;
+}
+
+/* ============================================================
+   3. SAMSUNG DELUXE — grey-olive shell, light screen mask,
+      louver vent, black dial in a window, 3 knobs, 5 grille cells
+   ============================================================ */
+[data-model="tv-samsung-deluxe"] .tv-shell { --sr: 1.27; --pw: calc(var(--u) * 20); --vr: calc(var(--u) * 6.2) / calc(var(--u) * 5.8); --glass-off: #525b4f; }
+[data-model="tv-samsung-deluxe"] .tv-shell {
+  margin-bottom: calc(var(--u) * 3.2);
+  padding: calc(var(--u) * 5.4) calc(var(--u) * 2.5) calc(var(--u) * 5.4) calc(var(--u) * 3.5);
+  background: linear-gradient(172deg, #c6c5b3 0%, #b4b3a1 46%, #a3a291 100%);
+  border-radius: calc(var(--u) * 1.8);
+  box-shadow: 0 calc(var(--u) * 1.5) calc(var(--u) * 3.2) rgba(30,28,15,.5), inset 0 calc(var(--u) * .3) calc(var(--u) * .5) rgba(255,255,255,.45), inset 0 calc(var(--u) * -.4) calc(var(--u) * .8) rgba(70,68,50,.4), inset 0 0 0 calc(var(--u) * .35) #9a9988;
+}
+[data-model="tv-samsung-deluxe"] .tv-body { column-gap: calc(var(--u) * 3.2); }
+[data-model="tv-samsung-deluxe"] .crt-bezel {
+  padding: calc(var(--u) * 3.2); background: linear-gradient(145deg, #d6d5c4, #b8b7a5); border-radius: calc(var(--u) * 8) / calc(var(--u) * 7.4);
+  box-shadow: 0 calc(var(--u) * .3) calc(var(--u) * .7) rgba(0,0,0,.3), inset calc(var(--u) * .25) calc(var(--u) * .3) calc(var(--u) * .5) rgba(255,255,255,.55), inset 0 0 0 calc(var(--u) * .3) rgba(60,58,40,.35);
+}
+[data-model="tv-samsung-deluxe"] .crt-viewport { box-shadow: 0 0 0 calc(var(--u) * .5) #2b2c28, 0 0 0 calc(var(--u) * .8) rgba(255,255,255,.18); }
+[data-model="tv-samsung-deluxe"] .side-panel { border-left: calc(var(--u) * .18) solid rgba(70,68,50,.45); padding-left: calc(var(--u) * 1.6); margin-left: calc(var(--u) * -1.6); }
+[data-model="tv-samsung-deluxe"] .pnl-sams { display: flex; margin: calc(var(--u) * -.5) 0 calc(var(--u) * -3.2); gap: calc(var(--u) * 1.1); padding-top: calc(var(--u) * 1.2); }
+[data-model="tv-samsung-deluxe"] .tv-foot {
+  display: block; left: 11%; right: 13%; bottom: calc(var(--u) * -2.9); height: calc(var(--u) * 3.4); z-index: -1;
+  background: linear-gradient(180deg, #e2d7b3, #c7b98f); border-radius: 0 0 calc(var(--u) * .8) calc(var(--u) * .8);
+  box-shadow: 0 calc(var(--u) * .6) calc(var(--u) * 1.2) rgba(0,0,0,.35);
+}
+.m-vent {
+  flex: 0 0 calc(var(--u) * 7.4); width: calc(var(--u) * 17.5); display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u) * .55); padding: 0 calc(var(--u) * 1.4);
+  background: #2b2b28; border-radius: calc(var(--u) * .6); box-shadow: 0 0 0 calc(var(--u) * .45) #cfcebd, 0 0 0 calc(var(--u) * .7) #6f6e60, inset 0 calc(var(--u) * .2) calc(var(--u) * .5) rgba(0,0,0,.8);
+}
+.m-vent i { display: block; height: calc(var(--u) * .75); background: linear-gradient(180deg, #e8e8de, #8d8d82); border-radius: calc(var(--u) * .3); transform: skewY(-3deg); }
+.m-script {
+  flex: 0 0 calc(var(--u) * 2.6); font: italic 400 calc(var(--u) * 2.2)/1 "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive; font-size: calc(var(--u) * 2.3);
+  color: #8b5a4b; text-align: center; margin-top: calc(var(--u) * .4);
+}
+.m-window {
+  flex: 0 0 calc(var(--u) * 13.4); width: calc(var(--u) * 17.2); display: grid; place-items: center;
+  background: linear-gradient(180deg, #a7a697, #bdbcab); border-radius: calc(var(--u) * .5);
+  box-shadow: 0 0 0 calc(var(--u) * .4) #d4d3c2, 0 0 0 calc(var(--u) * .65) #6d6c5e, inset 0 calc(var(--u) * .25) calc(var(--u) * .6) rgba(0,0,0,.45);
+}
+.m-dial {
+  position: relative; width: calc(var(--u) * 10.6); height: calc(var(--u) * 10.6); border-radius: 50%;
+  background: repeating-conic-gradient(#101010 0 4deg, #1f1f1f 4deg 8deg);
+  box-shadow: 0 calc(var(--u) * .4) calc(var(--u) * .9) rgba(0,0,0,.65), inset 0 0 0 calc(var(--u) * .3) #2d2d2d, inset 0 0 0 calc(var(--u) * .8) #0a0a0a;
+}
+.m-hub { position: absolute; left: 50%; top: 50%; width: calc(var(--u) * 5.4); height: calc(var(--u) * 5.4); margin: calc(var(--u) * -2.7); border-radius: 50%; background: radial-gradient(circle at 36% 30%, #3b3b3b, #0b0b0b 70%); box-shadow: inset 0 0 0 calc(var(--u) * .2) #3c3c3c; }
+.m-lever {
+  --base: 28deg; position: absolute; z-index: 2; left: 50%; top: 50%; width: calc(var(--u) * 2.2); height: calc(var(--u) * 9.8); margin: calc(var(--u) * -4.9) 0 0 calc(var(--u) * -1.1);
+  background: linear-gradient(90deg, #060606, #2a2a2a 50%, #060606); border-radius: calc(var(--u) * 1.1); box-shadow: 0 calc(var(--u) * .2) calc(var(--u) * .5) rgba(0,0,0,.7);
+}
+.m-strip {
+  flex: 0 0 calc(var(--u) * 1.7); width: calc(var(--u) * 17.6); display: flex; justify-content: space-between; align-items: center; padding: 0 calc(var(--u) * .5);
+  background: #2a2a28; border-radius: calc(var(--u) * .25);
+}
+.m-strip span { color: #ecece2; font: 700 calc(var(--u) * 1)/1 Arial, Helvetica, sans-serif; font-size: calc(var(--u) * .98); white-space: nowrap; letter-spacing: calc(var(--u) * -.02); }
+.m-knobs { flex: 0 0 calc(var(--u) * 3.6); width: calc(var(--u) * 17.6); display: flex; justify-content: space-around; align-items: center; }
+.m-k {
+  display: block; width: calc(var(--u) * 3.5); height: calc(var(--u) * 3.5); border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #5b5b57 0 30%, transparent 31%), repeating-conic-gradient(#2e2e2c 0 6deg, #6c6c66 6deg 12deg);
+  box-shadow: 0 calc(var(--u) * .25) calc(var(--u) * .5) rgba(0,0,0,.65), inset 0 0 0 calc(var(--u) * .2) #1a1a19;
+}
+.m-speaker { flex: 0 0 auto; width: calc(var(--u) * 18.4); display: flex; flex-direction: column; gap: calc(var(--u) * .55); }
+.m-cell {
+  display: block; position: relative; height: calc(var(--u) * 4.1); border-radius: calc(var(--u) * .4);
+  background: repeating-linear-gradient(90deg, #3a3a37 0 calc(var(--u) * .42), #aeada0 calc(var(--u) * .42) calc(var(--u) * .95));
+  box-shadow: 0 0 0 calc(var(--u) * .3) #c9c8b7, 0 0 0 calc(var(--u) * .5) #6e6d5f, inset 0 calc(var(--u) * .15) calc(var(--u) * .4) rgba(0,0,0,.35);
+}
+.m-cell-brand { display: flex; align-items: center; justify-content: center; }
+.m-plate {
+  display: block; padding: calc(var(--u) * .45) calc(var(--u) * 1.3); border-radius: calc(var(--u) * .35); background: linear-gradient(180deg, #34342f, #151514);
+  color: #f1f1e8; font: 800 calc(var(--u) * 1.5)/1 Arial, Helvetica, sans-serif; font-size: calc(var(--u) * 1.45); letter-spacing: calc(var(--u) * .1);
+  box-shadow: 0 0 0 calc(var(--u) * .22) #c8c7b6, 0 calc(var(--u) * .2) calc(var(--u) * .4) rgba(0,0,0,.5);
+}
+.m-cell-brand .power-led { position: absolute; right: calc(var(--u) * 1.1); top: 50%; margin-top: calc(var(--u) * -.55); }
+
+/* motion preference */
+@media (prefers-reduced-motion: reduce) { .spin { transition: none; } }
+
 
 /* Controls bar */
 .universal-controls {
-  width: 100%; max-width: 700px;
+  width: 100%; max-width: 680px;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
   background: var(--surface); border: 1px solid #332e28; border-radius: 14px; padding: 10px 12px;
 }
@@ -226,7 +393,7 @@ body.mode-bw .channel-osd { color: var(--amber); }
   border-radius: 10px; padding: 8px 12px; font-size: 0.85rem;
 }
 .custom-add-box {
-  width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 8px;
+  width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 8px;
   background: var(--surface); border: 1px solid #332e28; border-radius: 12px; padding: 12px;
 }
 .custom-add-box input {
@@ -252,242 +419,18 @@ body.mode-bw .channel-osd { color: var(--amber); }
 .official-frame-body { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .official-frame-body iframe { width: 100%; height: 100%; border: 0; }
 
-/* Powered off */
-.tv-frame-container.powered-off .crt-viewport { background: #010101; }
-.tv-frame-container.powered-off video,
-.tv-frame-container.powered-off #staticCanvas,
-.tv-frame-container.powered-off .scanlines,
-.tv-frame-container.powered-off .crt-vignette,
-.tv-frame-container.powered-off .crt-glow { opacity: 0 !important; visibility: hidden; }
-
-/* ============================================================
-   FRAME 1: Samsung R-359 Olive Green
-   ============================================================ */
-[data-model="tv-samsung-deluxe"] .tv-shell {
-  background: linear-gradient(155deg, #6a7258 0%, #5B634B 45%, #434A36 100%);
-  border: 12px solid #343a2a;
-  border-radius: 18px;
-  box-shadow: 0 16px 40px rgba(20,25,10,0.5), inset 0 1px 2px rgba(200,210,160,0.08);
-}
-[data-model="tv-samsung-deluxe"] .tv-brand-badge { color: #d0d4c0; letter-spacing: 4px; }
-[data-model="tv-samsung-deluxe"] .speaker-badge { color: #c0c4b0; }
-[data-model="tv-samsung-deluxe"] .panel-shutter { display: block; }
-[data-model="tv-samsung-deluxe"] .speaker-grill {
-  background: repeating-linear-gradient(0deg, #2a3020 0 2px, #3a4030 2px 3px);
-}
-
-/* ============================================================
-   FRAME 2: National Red (crimson + chrome handle)
-   ============================================================ */
-[data-model="tv-national-red"] .tv-shell {
-  background: linear-gradient(150deg, #c02020 0%, #A81B18 40%, #7a1010 100%);
-  border: 11px solid #5a0c0c;
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(60,5,5,0.5), inset 0 1px 3px rgba(255,180,160,0.12);
-  position: relative;
-}
-[data-model="tv-national-red"] .tv-shell::before {
-  content: "";
-  position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
-  width: 80px; height: 10px;
-  border: 3px solid #c0c0c0;
-  border-bottom: none; border-radius: 10px 10px 0 0;
-  background: transparent;
-  box-shadow: 0 -1px 2px rgba(0,0,0,0.3);
-}
-[data-model="tv-national-red"] .tv-brand-badge { color: #fff; letter-spacing: 3px; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
-[data-model="tv-national-red"] .crt-bezel { background: #111; border-color: #0a0a0a; border-radius: 4px; }
-[data-model="tv-national-red"] .speaker-badge { color: #eee; }
-[data-model="tv-national-red"] .speaker-grill {
-  background: repeating-linear-gradient(90deg, #1a0808 0 2px, #2a1010 2px 4px);
-  height: 28px;
-}
-[data-model="tv-national-red"] .dial-channel {
-  background: radial-gradient(circle at 40% 35%, #e0dcd4 0%, #6a6058 100%);
-}
-
-/* ============================================================
-   FRAME 3: National Cream & Black
-   ============================================================ */
-[data-model="tv-national-cream"] .tv-shell {
-  background: linear-gradient(150deg, #e8e0bc 0%, #DCD3A9 50%, #c8bf98 100%);
-  border: 11px solid #a09870;
-  border-radius: 12px;
-  box-shadow: 0 14px 36px rgba(50,45,20,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
-}
-[data-model="tv-national-cream"] .tv-brand-badge { color: #2a2418; letter-spacing: 2px; font-size: 11px; }
-[data-model="tv-national-cream"] .crt-bezel {
-  background: #1A1A1A; border-color: #0a0a0a; border-radius: 6px;
-}
-[data-model="tv-national-cream"] .side-panel {
-  background: #1A1A1A; border-radius: 6px; padding: 8px 4px;
-}
-[data-model="tv-national-cream"] .mini-extra { display: block; }
-[data-model="tv-national-cream"] .mini-knobs { flex-direction: column; gap: 4px; }
-[data-model="tv-national-cream"] .speaker-badge { color: #c8a030; font-size: 6px; }
-[data-model="tv-national-cream"] .speaker-grill {
-  background: repeating-linear-gradient(0deg, #111 0 2px, #222 2px 3px); height: 24px;
-}
-[data-model="tv-national-cream"] .dial-channel {
-  background: radial-gradient(circle at 40% 35%, #d0ccc4 0%, #5a5650 100%);
-  border-color: #c8a030;
-}
-
-/* ============================================================
-   FRAME 4: SAMPO White / Black portable
-   ============================================================ */
-[data-model="tv-sampo-white"] .tv-shell {
-  background: linear-gradient(150deg, #f0ebe0 0%, #E5DFCD 50%, #d0cabb 100%);
-  border: 10px solid #b0aa98;
-  border-radius: 14px;
-  box-shadow: 0 14px 36px rgba(40,35,20,0.3);
-  position: relative;
-}
-[data-model="tv-sampo-white"] .tv-shell::after {
-  content: "";
-  position: absolute; top: -28px; right: 18%;
-  width: 3px; height: 28px;
-  background: linear-gradient(180deg, #ccc 0%, #888 100%);
-  border-radius: 1px;
-  transform: rotate(18deg);
-  box-shadow: 0 0 0 1px #666;
-}
-[data-model="tv-sampo-white"] .tv-brand-badge { color: #2a2820; letter-spacing: 3px; }
-[data-model="tv-sampo-white"] .crt-bezel { background: #0a0a0a; border-radius: 8px; }
-[data-model="tv-sampo-white"] .speaker-grill {
-  height: 40px;
-  background:
-    radial-gradient(circle, #333 1px, transparent 1.5px) 0 0 / 6px 6px,
-    #1a1a1a;
-  border-radius: 4px;
-}
-[data-model="tv-sampo-white"] .speaker-badge { color: #444; }
-[data-model="tv-sampo-white"] .mini-knobs { gap: 8px; }
-[data-model="tv-sampo-white"] .mini-knob {
-  background: radial-gradient(circle at 35% 30%, #ddd 0%, #777 100%);
-  border-color: #555;
-}
-
-/* ============================================================
-   FRAME 5: Sony Trinitron Dark Walnut
-   ============================================================ */
-[data-model="tv-sony-trinitron-wood"] .tv-shell {
-  background:
-    repeating-linear-gradient(93deg,
-      #4a3020 0px, #4a3020 6px,
-      #362217 6px, #362217 11px,
-      #2a1a10 11px, #2a1a10 15px);
-  border: 12px solid #1e120c;
-  border-radius: 6px 6px 3px 3px;
-  box-shadow: 0 18px 44px rgba(15,8,0,0.55), inset 0 0 0 1px #6a5040;
-  margin-bottom: 28px;
-}
-[data-model="tv-sony-trinitron-wood"] .tv-brand-badge {
-  color: #c9a46a; letter-spacing: 2px; font-style: italic; font-size: 11px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-}
-[data-model="tv-sony-trinitron-wood"] .crt-bezel {
-  border-radius: 4px;
-  box-shadow: inset 0 0 0 2px #8a7060, inset 0 6px 16px rgba(0,0,0,0.9);
-}
-[data-model="tv-sony-trinitron-wood"] .side-panel {
-  background: linear-gradient(180deg, #c0c4c8 0%, #8a9098 100%);
-  border-radius: 4px; padding: 8px 4px;
-  border: 1px solid #6a7078;
-}
-[data-model="tv-sony-trinitron-wood"] .panel-shutter {
-  display: block; height: 14px;
-  background: repeating-linear-gradient(90deg, #5a6068 0 1px, #a0a8b0 1px 3px);
-}
-[data-model="tv-sony-trinitron-wood"] .speaker-badge {
-  color: transparent;
-  background: linear-gradient(90deg, #e04040, #e0c040, #40c040, #4080e0, #8040e0);
-  height: 4px; border-radius: 1px; margin-top: 4px;
-  font-size: 0;
-}
-[data-model="tv-sony-trinitron-wood"] .speaker-grill {
-  background: repeating-linear-gradient(0deg, #5a6068 0 1px, #9098a0 1px 2px); height: 28px;
-}
-[data-model="tv-sony-trinitron-wood"] .bottom-knobs { display: flex; }
-[data-model="tv-sony-trinitron-wood"] .bottom-knobs .mini-knob {
-  background: radial-gradient(circle at 35% 30%, #c0b8a8 0%, #5a5040 100%);
-  border-color: #3a3020; width: 20px; height: 20px;
-}
-[data-model="tv-sony-trinitron-wood"] .tv-legs {
-  display: block;
-  background: linear-gradient(90deg,
-    transparent 0 7%, #1e120c 7% 13%, transparent 13% 87%, #1e120c 87% 93%, transparent 93%);
-}
-[data-model="tv-sony-trinitron-wood"] .dial-channel {
-  background: radial-gradient(circle at 40% 35%, #e0e4e8 0%, #6a7078 100%);
-  border-color: #4a5058;
-}
-[data-model="tv-sony-trinitron-wood"] .dial-num { color: #1a1a1a; }
-
-/* ============================================================
-   FRAME 6: Hitachi Solid State Charcoal
-   ============================================================ */
-[data-model="tv-hitachi-solid"] .tv-shell {
-  background: linear-gradient(155deg, #34363c 0%, #282A2E 50%, #1c1e22 100%);
-  border: 11px solid #141618;
-  border-radius: 10px;
-  box-shadow: 0 14px 36px rgba(0,0,0,0.55);
-  position: relative;
-}
-[data-model="tv-hitachi-solid"] .tv-shell::before,
-[data-model="tv-hitachi-solid"] .tv-shell::after {
-  content: "";
-  position: absolute; top: 8px;
-  width: 28px; height: 8px;
-  border: 2px solid #8a8070;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #6a6050, #4a4030);
-}
-[data-model="tv-hitachi-solid"] .tv-shell::before { left: 18%; }
-[data-model="tv-hitachi-solid"] .tv-shell::after { right: 18%; }
-[data-model="tv-hitachi-solid"] .tv-brand-badge { color: #c0b8a0; letter-spacing: 3px; }
-[data-model="tv-hitachi-solid"] .side-panel {
-  background: linear-gradient(180deg, #8a7a50 0%, #6a5a38 50%, #5a4a30 100%);
-  border-radius: 5px; padding: 8px 4px;
-  border: 1px solid #4a3a20;
-}
-[data-model="tv-hitachi-solid"] .dial-channel {
-  background: radial-gradient(circle at 40% 35%, #d0c8a0 0%, #6a5a30 100%);
-  border: 3px solid #3a3020;
-  box-shadow: 0 0 0 2px #8a7a50, 0 2px 6px rgba(0,0,0,0.5);
-}
-[data-model="tv-hitachi-solid"] .dial-num { color: #1a1408; }
-[data-model="tv-hitachi-solid"] .speaker-badge { color: #c0b080; }
-[data-model="tv-hitachi-solid"] .speaker-grill {
-  background: repeating-linear-gradient(0deg, #2a2418 0 2px, #3a3428 2px 3px); height: 32px;
-}
-[data-model="tv-hitachi-solid"] .power-led { width: 9px; height: 9px; }
-
-/* Responsive adjustments */
+/* Responsive (non-TV parts only — the TVs scale themselves with the "u" unit) */
 @media (max-width: 560px) {
   body { padding: 0 8px 36px; }
-  .tv-shell { padding: 10px; border-width: 8px !important; }
-  .tv-body { gap: 6px; }
-  .side-panel { flex: 0 0 78px; gap: 6px; }
-  .dial-channel { width: 44px; height: 44px; }
-  .dial-num { font-size: 5px; }
-  .dial-uhf { width: 28px; height: 28px; }
-  .crt-bezel { padding: 6px; border-width: 5px; }
-  .tv-brand-badge { font-size: 10px; margin-bottom: 6px; }
   .universal-controls { padding: 8px; gap: 6px; }
   .ctrl-btn { width: 36px; height: 36px; }
-  .model-select { max-width: 120px; font-size: 0.72rem; }
-  [data-model="tv-sony-trinitron-wood"] { margin-bottom: 22px; }
-  [data-model="tv-sony-trinitron-wood"] .tv-legs { bottom: -18px; height: 20px; }
-  [data-model="tv-sampo-white"] .tv-shell::after { top: -20px; height: 20px; }
-  [data-model="tv-hitachi-solid"] .tv-shell::before,
-  [data-model="tv-hitachi-solid"] .tv-shell::after { width: 20px; height: 6px; top: 6px; }
+  .model-select { max-width: 130px; font-size: 0.72rem; }
 }
 
 @media (min-width: 900px) {
   .tv-stage, .app-header { max-width: 900px; }
-  .tv-frame-container { max-width: 740px; }
-  .universal-controls { max-width: 740px; }
+  .tv-frame-container { max-width: 720px; }
+  .universal-controls { max-width: 720px; }
 }
 
 button:focus-visible, select:focus-visible, input:focus-visible {

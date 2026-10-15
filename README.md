@@ -1,25 +1,23 @@
-# Pi Vintage TV — Bảo Tàng TV Việt
+# Pi Vintage TV — Authentic Retro Frames
 
-Authentic Vietnamese retro television experience (1970s–1990s Bao Cap era).
+Lightweight international retro TV streamer with 3 TV sets rebuilt from real 1970s–1980s photos.
+Every TV is drawn with pure CSS/HTML (no image files) and scales proportionally on any screen.
 
-## Brands
-| Brand | Era | Look |
-|-------|-----|------|
-| **National** | 1980s | Burgundy red plastic portable |
-| **Sharp** | 1980s | Cream / ivory family set |
-| **Sony Trinitron** | 1970s | Dark walnut wood + legs |
-| **Rubin (РУБИН)** | Soviet import | Heavy wood block |
-| **Viettronics** | Early 1990s | Charcoal plastic (Tân Bình / Thủ Đức) |
+## Frames
+| Model | Look |
+|-------|------|
+| **International Red** (default) | Glossy orange-red shell, black face plate, 2 red pods with numbered 1–12 dials, chrome-line speaker + "14" badge, rabbit-ear antenna |
+| **SAMPO Cream** | Ivory body, black wrap-around plate, 2 silver ribbed dials with tick rings, dotted speaker, CONTRAST / OFF·VOL knobs, telescopic antenna |
+| **Samsung Deluxe** | Grey-olive shell, light screen mask, louver vent, "Deluxe" script, black dial in a window, 3 knobs, 5 grille cells + SAMSUNG plate |
 
 ## Features
-- Switch brands via strip or cycle button
-- CRT scanlines, vignette, B&W/Color mode
-- Retro OSD, physical knobs
-- HLS streams + official VTV/HTV pages in channel list
-- English / Vietnamese
+- HLS streams + official VTV/HTV in channel list
+- CRT scanlines, vignette, B&W mode
+- EN / VI language toggle
+- Custom M3U8 channels
 
 ## Run
 ```bash
 npm install && npm start
-# → http://localhost:8080
+# http://localhost:8080
 ```
