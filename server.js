@@ -42,17 +42,21 @@ mountAIRoutes(app, ai, { adminAuth });
 const fbOpts = {
   appId: process.env.SHFH_APP_ID || 'pi-vintage-tv',
   appName: process.env.SHFH_APP_NAME || 'Pi Vintage TV',
-  version: pkg.version || '1.9.5'
+  version: pkg.version || '1.9.6',
+  // Built-in Feedback Hub (overridable via env)
+  hubId: process.env.SHFH_HUB_ID || 'SHFH-CANNOI-0905428801',
+  baseUrl: process.env.SHFH_HUB_URL || 'http://14.176.78.46:8090',
+  ingestToken: process.env.SHFH_INGEST_TOKEN || 'cannoi_7Kp9xV2mQ8rN4tY6cL3wA5zD1eF0uH9'
 };
-if (process.env.SHFH_HUB_ID) fbOpts.hubId = process.env.SHFH_HUB_ID;
-if (process.env.SHFH_HUB_URL) fbOpts.baseUrl = process.env.SHFH_HUB_URL;
-if (process.env.SHFH_INGEST_TOKEN) fbOpts.ingestToken = process.env.SHFH_INGEST_TOKEN;
 const fb = createFeedbackService(fbOpts);
-if (process.env.ENABLE_FEEDBACK === '1') mountFeedbackRoutes(app, fb);
+mountFeedbackRoutes(app, fb);
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', version: pkg.version, channels: library.stats().total });
+  let channels = 0;
+  try { channels = library.stats().total; } catch (_) {}
+  res.status(200).json({ status: 'ok', ok: true, statusCode: 'healthy', version: pkg.version, channels });
 });
+app.get('/api/health', (req, res) => res.redirect(302, '/health'));
 
 mountLibraryRoutes(app, { library, health, enricher, adminAuth });
 mountToolRoutes(app, { library, health, enricher, dataDir: DATA_DIR });
@@ -83,7 +87,14 @@ app.get('/api/tv/channels', (req, res) => res.json({ ok: true, channels: library
 app.get('/api/probe-stream', (req, res) => res.status(410).json({ ok: false, error: 'use_health_checker' }));
 app.get('/api/resolve-stream', (req, res) => res.status(403).json({ ok: false, error: 'disabled' }));
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Pi Vintage TV ${pkg.version} on :${PORT} · library=${library.stats().total}`);
+const HOST = process.env.HOST || '0.0.0.0';
+const server = app.listen(PORT, HOST, () => {
+  let n = 0;
+  try { n = library.stats().total; } catch (_) {}
+  console.log(`Pi Vintage TV ${pkg.version} listening on http://${HOST}:${PORT} · library=${n}`);
+});
+server.on('error', (err) => {
+  console.error('Server listen error:', err);
+  process.exit(1);
 });
 module.exports = server;

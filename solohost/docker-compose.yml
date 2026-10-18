@@ -1,25 +1,18 @@
 services:
   app:
-    image: ghcr.io/cannoi/pi-tv-streamer:676e8005114db636c1ebc219cb1f20ce263d871d
+    image: ${IMAGE_TAG:-pi-vintage-tv:local}
     restart: unless-stopped
-    labels:
-      pi.ui.primary: "true"
     ports:
-      - "127.0.0.1:18082:8080"
+      - "8080:8080"
     environment:
-      - PORT=8080
-      AI_API_KEY: ${AI_API_KEY}
-      AI_BASE_URL: ${AI_BASE_URL}
-      AI_DEBUG: ${AI_DEBUG}
-      AI_EXTRA_HEADERS: ${AI_EXTRA_HEADERS}
-      AI_MODE: ${AI_MODE}
-      AI_MODEL: ${AI_MODEL}
-      AI_PROVIDER: ${AI_PROVIDER}
-      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS}
-      HOST_PORT: ${HOST_PORT}
-      SHFH_APP_ID: ${SHFH_APP_ID}
-      SHFH_APP_NAME: ${SHFH_APP_NAME}
-      SHFH_APP_VERSION: ${SHFH_APP_VERSION}
-      SHFH_HUB_ID: ${SHFH_HUB_ID}
-      SHFH_HUB_URL: ${SHFH_HUB_URL}
-      SHFH_INGEST_TOKEN: ${SHFH_INGEST_TOKEN}
+      PORT: "8080"
+      HOST: "0.0.0.0"
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      SOLOHOST_PUBLIC_URL: ${SOLOHOST_PUBLIC_URL:-}
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+    volumes:
+      - app-data:/app/data
+volumes:
+  app-data:

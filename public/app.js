@@ -1556,31 +1556,45 @@ if ('serviceWorker' in navigator) {
 })();
 
 
-/* Swipe channels on CRT / fullscreen */
+/* Swipe channels on CRT / fullscreen (touch) */
 (function setupSwipeChannels() {
-  const targets = () => [document.getElementById('screenInner'), document.getElementById('tv-frame-container')].filter(Boolean);
   let x0 = 0, y0 = 0, t0 = 0;
+  function onStart(e) {
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
+  }
+  function onEnd(e) {
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    const dx = t.clientX - x0;
+    const dy = t.clientY - y0;
+    const dt = Date.now() - t0;
+    if (dt > 900) return;
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+    if (!channels || !channels.length) return;
+    if (typeof playChannel !== 'function') return;
+    if (dx < 0) playChannel((currentChannelIndex + 1) % channels.length);
+    else playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+  }
   function bind(el) {
     if (!el || el.__swipeBound) return;
     el.__swipeBound = true;
-    el.addEventListener('touchstart', (e) => {
-      const t = e.changedTouches[0];
-      x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
-    }, { passive: true });
-    el.addEventListener('touchend', (e) => {
-      const t = e.changedTouches[0];
-      const dx = t.clientX - x0;
-      const dy = t.clientY - y0;
-      const dt = Date.now() - t0;
-      if (dt > 800) return;
-      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-      if (!channels || !channels.length) return;
-      if (dx < 0) playChannel((currentChannelIndex + 1) % channels.length);
-      else playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
-    }, { passive: true });
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchend', onEnd, { passive: true });
   }
-  targets().forEach(bind);
-  document.addEventListener('fullscreenchange', () => setTimeout(() => targets().forEach(bind), 50));
+  function rebind() {
+    bind(document.getElementById('screenInner'));
+    bind(document.getElementById('tv-frame-container'));
+    bind(document.getElementById('video'));
+    bind(document.querySelector('.crt-viewport'));
+    bind(document.querySelector('.crt-screen-container'));
+    // Fullscreen element (video or wrapper)
+    if (document.fullscreenElement) bind(document.fullscreenElement);
+  }
+  rebind();
+  document.addEventListener('fullscreenchange', () => setTimeout(rebind, 30));
+  document.addEventListener('webkitfullscreenchange', () => setTimeout(rebind, 30));
+  // Late DOM
+  window.addEventListener('load', rebind);
 })();
 
 /* ---- smart_import + remote QR in AI chat ---- */
