@@ -73,7 +73,7 @@ function mergeOfficialIntoVn() {
 }
 mergeOfficialIntoVn();
 
-let currentCountry = localStorage.getItem('pi_vintage_country') || 'vn';
+let currentCountry = localStorage.getItem('pi_vintage_country') || 'intl';
 let channels = [...(CHANNELS_BY_COUNTRY[currentCountry] || CHANNELS_BY_COUNTRY.vn)];
 let currentChannelIndex = 0;
 let isPoweredOn = true;
@@ -87,7 +87,7 @@ let staticWatchTimer = null;
 let editingChannelId = null;
 let userInteracted = false;
 let resolveTimer = null;
-let currentLang = localStorage.getItem('pi_vintage_lang') || 'vi';
+let currentLang = localStorage.getItem('pi_vintage_lang') || 'en';
 let lastPowerPress = 0;
 const POWER_DOUBLE_MS = 5000;
 
@@ -1281,16 +1281,7 @@ if (btnImportDry) btnImportDry.addEventListener('click', () => runImport(true));
 if (btnImportGo) btnImportGo.addEventListener('click', () => runImport(false));
 
 // Auto-load library on boot if it has channels
-(async function bootLibrary() {
-  try {
-    const r = await fetch('/api/library/stats');
-    const j = await r.json();
-    if (j && j.total > 0) {
-      await loadLibraryIntoTv();
-    }
-  } catch (_) {}
-  applyExtraI18n();
-})();
+
 
 /* ---- AI tools: find_sources / import_source ---- */
 async function toolFindSources(args) {
@@ -1657,7 +1648,7 @@ async function toolSmartImport(args) {
     const r = await fetch('/api/tools/smart_import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, includeGithub: /github/i.test(query), confirm })
+      body: JSON.stringify({ query, url: args.url || undefined, includeGithub: true, confirm })
     });
     const j = await r.json();
     const append = window.appendAiMsg || window.__appendAiMsg;
@@ -1821,3 +1812,103 @@ window.__playWithProxyFallback = async function(url, channelId) {
 };
 
 window.toolShowRemoteAccess = toolShowRemoteAccess;
+
+
+(async function bootFromServer() {
+  try {
+    // 1) Load shared library (disk) — same for all devices on this instance
+    const st = await fetch('/api/library/stats').then(r => r.json()).catch(() => ({}));
+    if (st && st.total > 0) {
+      await loadLibraryIntoTv();
+    } else {
+      // Use built-in country defaults when server library empty
+      const code = localStorage.getItem('pi_vintage_country') || 'vn';
+      if (typeof loadCountry === 'function') await loadCountry(code);
+      else {
+        channels = [...(CHANNELS_BY_COUNTRY[code] || CHANNELS_BY_COUNTRY.vn || [])];
+        if (typeof renderChannelSelect === 'function') renderChannelSelect();
+      }
+    }
+    // 2) Cross-device memory
+    const us = await fetch('/api/user/state').then(r => r.json()).catch(() => null);
+    if (us && us.ok !== false) {
+      window.__channelHistory = us.history || [];
+      window.__favorites = new Set(us.favorites || []);
+      if (us.lastChannelId && channels.length) {
+        const idx = channels.findIndex(c => c.id === us.lastChannelId);
+        if (idx >= 0 && isPoweredOn) playChannel(idx);
+      }
+      renderHistoryUi();
+    }
+  } catch (e) {
+    console.warn('bootFromServer', e);
+  }
+  applyLanguage();
+})();
+
+function renderHistoryUi() {
+  const box = document.getElementById('historyList');
+  if (!box) return;
+  box.textContent = '';
+  const hist = window.__channelHistory || [];
+  if (!hist.length) {
+    box.textContent = currentLang === 'vi' ? 'Chưa có lịch sử' : 'No history yet';
+    return;
+  }
+  hist.slice(0, 20).forEach(h => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hub-item';
+    b.textContent = h.name || h.id;
+    b.addEventListener('click', () => {
+      const idx = channels.findIndex(c => c.id === h.id);
+      if (idx >= 0) playChannel(idx);
+      else if (h.url) {
+        channels.push({ id: h.id, name: h.name, url: h.url, category: 'History' });
+        renderChannelSelect();
+        playChannel(channels.length - 1);
+      }
+    });
+    box.appendChild(b);
+  });
+}
+
+async function rememberChannel(ch) {
+  if (!ch) return;
+  try {
+    const r = await fetch('/api/user/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: ch.id, name: ch.name, url: ch.url, country: currentCountry })
+    });
+    const j = await r.json();
+    window.__channelHistory = j.history || [];
+    renderHistoryUi();
+  } catch (_) {}
+}
+
+
+async function toolGithubSearch(args) {
+  args = args || {};
+  const q = args.query || args.q || '';
+  try {
+    const r = await fetch('/api/tools/github_search?q=' + encodeURIComponent(q));
+    const j = await r.json();
+    const append = window.appendAiMsg || window.__appendAiMsg;
+    const items = j.items || j.results || [];
+    if (!items.length) {
+      if (append) append('ai', currentLang === 'vi' ? 'Không thấy repo playlist phù hợp.' : 'No matching playlist repos.');
+      return j;
+    }
+    const lines = items.slice(0, 8).map((it, i) => {
+      const name = it.name || it.full_name || it.repo || ('item ' + (i+1));
+      const url = it.rawUrl || it.html_url || it.url || '';
+      return (i+1) + '. <b>' + String(name).replace(/</g,'') + '</b><br><small>' + String(url).replace(/</g,'') + '</small>';
+    }).join('<br>');
+    if (append) append('ai', (currentLang === 'vi' ? 'Kết quả GitHub (động):<br>' : 'GitHub results (dynamic):<br>') + lines);
+    return j;
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+window.toolGithubSearch = toolGithubSearch;

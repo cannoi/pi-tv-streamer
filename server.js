@@ -76,6 +76,7 @@ server.on('error', (err) => {
 function mountApi() {
   try {
     const { createLibrary } = require('./lib/iptv/library');
+    const { createUserState } = require('./lib/iptv/user-state');
     const { createHealthChecker } = require('./lib/iptv/health');
     const { createEnricher } = require('./lib/iptv/enrich');
     const { createEpgStore } = require('./lib/iptv/epg');
@@ -92,6 +93,7 @@ function mountApi() {
     const adapter = require('./lib/app-adapter');
 
     const library = createLibrary(DATA_DIR);
+    const userState = createUserState(DATA_DIR);
     const healthChk = createHealthChecker(library, { concurrency: 6 });
     const enricher = createEnricher(DATA_DIR);
     const epg = createEpgStore(DATA_DIR);
@@ -158,6 +160,20 @@ function mountApi() {
   }
 });
     app.get('/api/resolve-stream', (req, res) => res.status(403).json({ ok: false, error: 'disabled' }));
+
+
+    app.get('/api/user/state', (req, res) => res.json({ ok: true, ...userState.get() }));
+    app.post('/api/user/history', (req, res) => {
+      const b = req.body || {};
+      res.json({ ok: true, ...userState.pushHistory(b) });
+    });
+    app.post('/api/user/favorite', (req, res) => {
+      const b = req.body || {};
+      res.json({ ok: true, ...userState.setFavorite(b.id, b.on !== false) });
+    });
+    app.put('/api/user/state', (req, res) => {
+      res.json({ ok: true, ...userState.patch(req.body || {}) });
+    });
 
     ready = true;
     console.log(`[boot] API ready · library=${library.stats().total} · v${pkg.version}`);
