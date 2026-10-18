@@ -91,6 +91,91 @@ let currentLang = localStorage.getItem('pi_vintage_lang') || 'en';
 let lastPowerPress = 0;
 const POWER_DOUBLE_MS = 5000;
 
+/* ---- Browser-first memory (survives full page reload on this device) ---- */
+const LS = {
+  history: 'pi_vintage_history',
+  favorites: 'pi_vintage_favorites',
+  lastChannel: 'pi_vintage_last_channel',
+  volume: 'pi_vintage_volume',
+  muted: 'pi_vintage_muted',
+  power: 'pi_vintage_power'
+};
+
+function readJsonLS(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw == null || raw === '') return fallback;
+    return JSON.parse(raw);
+  } catch (_) { return fallback; }
+}
+function writeJsonLS(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+}
+function loadLocalHistory() {
+  const list = readJsonLS(LS.history, []);
+  return Array.isArray(list) ? list.slice(0, 50) : [];
+}
+function saveLocalHistory(list) {
+  writeJsonLS(LS.history, (Array.isArray(list) ? list : []).slice(0, 50));
+}
+function pushLocalHistory(entry) {
+  if (!entry || !entry.id) return loadLocalHistory();
+  const next = [
+    { id: entry.id, name: entry.name || entry.id, url: entry.url || '', country: entry.country || currentCountry, ts: Date.now() },
+    ...loadLocalHistory().filter(h => h && h.id !== entry.id)
+  ].slice(0, 50);
+  saveLocalHistory(next);
+  try { localStorage.setItem(LS.lastChannel, String(entry.id)); } catch (_) {}
+  window.__channelHistory = next;
+  return next;
+}
+function loadLocalFavorites() {
+  const list = readJsonLS(LS.favorites, []);
+  return new Set(Array.isArray(list) ? list.map(String) : []);
+}
+function saveLocalFavorites(set) {
+  writeJsonLS(LS.favorites, [...(set || [])]);
+}
+function setLocalFavorite(id, on) {
+  if (!id) return loadLocalFavorites();
+  const set = loadLocalFavorites();
+  if (on) set.add(String(id)); else set.delete(String(id));
+  saveLocalFavorites(set);
+  window.__favorites = set;
+  return set;
+}
+function mergeHistory(serverList, localList) {
+  const map = new Map();
+  (localList || []).concat(serverList || []).forEach(h => {
+    if (!h || !h.id) return;
+    const prev = map.get(h.id);
+    if (!prev || (Number(h.ts) || 0) >= (Number(prev.ts) || 0)) map.set(h.id, h);
+  });
+  return [...map.values()].sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0)).slice(0, 50);
+}
+function restoreVolumeFromLocal() {
+  if (!video) return;
+  try {
+    const vol = localStorage.getItem(LS.volume);
+    if (vol != null && vol !== '') {
+      const n = Number(vol);
+      if (Number.isFinite(n)) video.volume = Math.min(1, Math.max(0, n));
+    }
+    if (localStorage.getItem(LS.muted) === '1') video.muted = true;
+  } catch (_) {}
+}
+function persistVolumeLocal() {
+  if (!video) return;
+  try {
+    localStorage.setItem(LS.volume, String(video.volume));
+    localStorage.setItem(LS.muted, video.muted ? '1' : '0');
+  } catch (_) {}
+}
+
+// Seed in-memory history/favorites from browser immediately (before network).
+window.__channelHistory = loadLocalHistory();
+window.__favorites = loadLocalFavorites();
+
 const video = document.getElementById('tvVideo');
 const canvas = document.getElementById('staticCanvas');
 const ctx = canvas.getContext('2d');
@@ -279,9 +364,30 @@ async function loadCountry(code) {
   custom.forEach(c => { if (c && c.url && !base.some(x => x.id === c.id || x.url === c.url)) base.push(c); });
   showOsd(currentLang === 'vi' ? 'Đang lọc kênh…' : 'Filtering channels…');
   channels = await filterLiveChannels(base);
-  const savedFavorites = new Set(serverUserState && Array.isArray(serverUserState.favorites) ? serverUserState.favorites : []);
-  channels = channels.map(ch => ({ ...ch, favorite: savedFavorites.has(ch.id) || !!ch.favorite }));
-  const wantedId = serverUserState && serverUserState.lastChannelId;
+  // Favorites: merge server + browser (browser never lost on reload).
+  const localFav = loadLocalFavorites();
+  const serverFav = (serverUserState && Array.isArray(serverUserState.favorites)) ? serverUserState.favorites : [];
+  serverFav.forEach(id => localFav.add(String(id)));
+  saveLocalFavorites(localFav);
+  window.__favorites = localFav;
+  channels = channels.map(ch => ({ ...ch, favorite: localFav.has(String(ch.id)) || !!ch.favorite }));
+
+  // History: merge server + browser so reload never starts empty.
+  const localHist = loadLocalHistory();
+  const serverHist = (serverUserState && Array.isArray(serverUserState.history)) ? serverUserState.history : [];
+  const mergedHist = mergeHistory(serverHist, localHist);
+  saveLocalHistory(mergedHist);
+  window.__channelHistory = mergedHist;
+  try { renderHistoryUi(); } catch (_) {}
+
+  // Last channel: prefer server if present, else browser localStorage.
+  let wantedId = serverUserState && serverUserState.lastChannelId;
+  if (!wantedId) {
+    try { wantedId = localStorage.getItem(LS.lastChannel) || ''; } catch (_) { wantedId = ''; }
+  }
+  if (wantedId) {
+    try { localStorage.setItem(LS.lastChannel, String(wantedId)); } catch (_) {}
+  }
   const restoreIndex = wantedId ? channels.findIndex(c => c.id === wantedId) : -1;
   currentChannelIndex = restoreIndex >= 0 ? restoreIndex : 0;
   renderChannelSelect();
@@ -696,6 +802,7 @@ function renderChannelManager() {
         e.stopPropagation();
         ch.favorite = !ch.favorite;
         if (ch.id) {
+          setLocalFavorite(ch.id, ch.favorite);
           try {
             await fetch('/api/user/favorite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ch.id, on: ch.favorite }) });
             if (!String(ch.id).startsWith('custom-')) {
@@ -753,9 +860,11 @@ function playChannel(index) {
   if (frameContainer) frameContainer.style.setProperty('--ch-rot', (index * 30) + 'deg');
   const ch = channels[index];
   showOsd(ch.name);
-  // Record the channel on the server; avoid duplicate writes for repeated UI calls.
+  // Browser-first history: always remember on this device, then sync server.
   if (ch && ch.id && ch.id !== lastHistoryId) {
     lastHistoryId = ch.id;
+    pushLocalHistory({ id: ch.id, name: ch.name, url: ch.url, country: currentCountry });
+    try { renderHistoryUi(); } catch (_) {}
     fetch('/api/user/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ch.id, name: ch.name, url: ch.url, country: currentCountry }) }).catch(() => {});
   }
   clearWatchTimers();
@@ -970,6 +1079,9 @@ window.addEventListener('orientationchange', () => setTimeout(fitTvToViewport, 1
 
 window.addEventListener('DOMContentLoaded', () => {
   fitTvToViewport();
+  // Show history UI immediately from browser memory (before network).
+  try { renderHistoryUi(); } catch (_) {}
+  restoreVolumeFromLocal();
   loadCountry(currentCountry);
   initCanvas();
   applyLanguage();
@@ -978,7 +1090,11 @@ window.addEventListener('DOMContentLoaded', () => {
   applyModel(MODEL_BADGES[saved] ? saved : 'tv-international-red');
   setPower(true);
   fitTvToViewport();
-  // loadCountry() restores the last server-saved channel; do not override it here.
+  // loadCountry() restores last channel from browser + server; history never starts empty on this device.
+  // Persist volume changes while watching.
+  if (video) {
+    video.addEventListener('volumechange', () => persistVolumeLocal());
+  }
 });
 
 window.__piVintageTv = {
@@ -1014,7 +1130,7 @@ function getAiContext() {
   const ch = channels[currentChannelIndex] || null;
   return {
     app: 'Pi Vintage TV',
-    version: '1.7.0',
+    version: '1.9.16',
     powered: !!isPoweredOn,
     country: currentCountry,
     theme: (frameContainer && frameContainer.getAttribute('data-model')) || 'tv-international-red',
@@ -1861,15 +1977,30 @@ window.toolShowRemoteAccess = toolShowRemoteAccess;
         if (typeof renderChannelSelect === 'function') renderChannelSelect();
       }
     }
-    // 2) Cross-device memory
+    // 2) Cross-device memory — merge with browser local so reload never wipes history.
     const us = await fetch('/api/user/state').then(r => r.json()).catch(() => null);
     if (us && us.ok !== false) {
-      window.__channelHistory = us.history || [];
-      window.__favorites = new Set(us.favorites || []);
-      if (us.lastChannelId && channels.length) {
-        const idx = channels.findIndex(c => c.id === us.lastChannelId);
+      const mergedHist = mergeHistory(us.history || [], loadLocalHistory());
+      saveLocalHistory(mergedHist);
+      window.__channelHistory = mergedHist;
+      const fav = loadLocalFavorites();
+      (us.favorites || []).forEach(id => fav.add(String(id)));
+      saveLocalFavorites(fav);
+      window.__favorites = fav;
+      // Apply stars onto current channel list
+      channels = channels.map(ch => ({ ...ch, favorite: fav.has(String(ch.id)) || !!ch.favorite }));
+      if (typeof renderChannelSelect === 'function') renderChannelSelect();
+      const wanted = us.lastChannelId || (function(){ try { return localStorage.getItem(LS.lastChannel); } catch(_) { return null; } })();
+      if (wanted && channels.length) {
+        try { localStorage.setItem(LS.lastChannel, String(wanted)); } catch (_) {}
+        const idx = channels.findIndex(c => c.id === wanted);
         if (idx >= 0 && isPoweredOn) playChannel(idx);
       }
+      renderHistoryUi();
+    } else {
+      // Server unavailable — keep pure browser memory
+      window.__channelHistory = loadLocalHistory();
+      window.__favorites = loadLocalFavorites();
       renderHistoryUi();
     }
   } catch (e) {
@@ -1907,6 +2038,9 @@ function renderHistoryUi() {
 
 async function rememberChannel(ch) {
   if (!ch) return;
+  // Always persist on this browser first so reload never loses history.
+  pushLocalHistory({ id: ch.id, name: ch.name, url: ch.url, country: currentCountry });
+  try { renderHistoryUi(); } catch (_) {}
   try {
     const r = await fetch('/api/user/history', {
       method: 'POST',
@@ -1914,8 +2048,12 @@ async function rememberChannel(ch) {
       body: JSON.stringify({ id: ch.id, name: ch.name, url: ch.url, country: currentCountry })
     });
     const j = await r.json();
-    window.__channelHistory = j.history || [];
-    renderHistoryUi();
+    if (Array.isArray(j.history) && j.history.length) {
+      const merged = mergeHistory(j.history, loadLocalHistory());
+      saveLocalHistory(merged);
+      window.__channelHistory = merged;
+      renderHistoryUi();
+    }
   } catch (_) {}
 }
 
