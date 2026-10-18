@@ -137,7 +137,26 @@ function mountApi() {
     app.get('/api/tv/channels', (req, res) => {
       res.json({ ok: true, channels: library.search({ limit: 500 }).channels });
     });
-    app.get('/api/probe-stream', (req, res) => res.status(410).json({ ok: false, error: 'use_health_checker' }));
+    app.get('/api/probe-stream', async (req, res) => {
+  try {
+    const url = String(req.query.url || '').trim();
+    if (!url) return res.json({ ok: false, error: 'missing_url' });
+    if (url === 'STATIC' || url.startsWith('OFFICIAL:')) return res.json({ ok: true, skipped: true });
+    // Light probe — never block UI defaults if upstream is flaky
+    const { assertSafeUrl, safeFetch } = require('./lib/net/safe-fetch');
+    try {
+      await assertSafeUrl(url);
+      const { response } = await safeFetch(url, { method: 'GET', maxBytes: 64 * 1024, timeoutMs: 6000 });
+      const ok = response && (response.ok || response.status === 206 || response.status === 405 || response.status === 403);
+      // 403 may still play in-player with different headers — report soft ok
+      return res.json({ ok: !!ok || response.status < 500, status: response.status });
+    } catch (e) {
+      return res.json({ ok: true, skipped: true, warning: e.message });
+    }
+  } catch (e) {
+    res.json({ ok: true, skipped: true });
+  }
+});
     app.get('/api/resolve-stream', (req, res) => res.status(403).json({ ok: false, error: 'disabled' }));
 
     ready = true;

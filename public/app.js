@@ -1,45 +1,56 @@
 /* Pi Vintage TV — cinema mode + country free channels */
 /* ---- Free channels by country (public HLS / official pages) ---- */
 const CHANNELS_BY_COUNTRY = {
-  /* Default zap list — official pages + a few known public HLS when available */
   vn: [
-    { id: 'vtv1', name: 'CH-01 VTV1', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/1', officialName: 'VTV1' },
-    { id: 'vtv2', name: 'CH-02 VTV2', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/2', officialName: 'VTV2' },
-    { id: 'vtv3', name: 'CH-03 VTV3', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/3', officialName: 'VTV3' },
-    { id: 'vtv4', name: 'CH-04 VTV4', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/4', officialName: 'VTV4' },
-    { id: 'vtv5', name: 'CH-05 VTV5', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/5', officialName: 'VTV5' },
-    { id: 'vtv7', name: 'CH-06 VTV7', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/35', officialName: 'VTV7' },
-    { id: 'vtv8', name: 'CH-07 VTV8', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/36', officialName: 'VTV8' },
-    { id: 'vtv9', name: 'CH-08 VTV9', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/9', officialName: 'VTV9' },
-    { id: 'vtv5-tn', name: 'CH-09 VTV5 Tây Nguyên', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/6', officialName: 'VTV5 Tây Nguyên' },
-    { id: 'vtv5-tnb', name: 'CH-10 VTV5 Tây Nam Bộ', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/7', officialName: 'VTV5 Tây Nam Bộ' },
-    { id: 'vtv-ct', name: 'CH-11 VTV Cần Thơ', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/37', officialName: 'VTV Cần Thơ' },
-    { id: 'htv7', name: 'CH-12 HTV7', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen?channel=1', officialName: 'HTV7' },
-    { id: 'htv9', name: 'CH-13 HTV9', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen?channel=2', officialName: 'HTV9' },
-    { id: 'htv-key', name: 'CH-14 HTV Key', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen', officialName: 'HTV Key' },
-    { id: 'antv', name: 'CH-15 ANTV', category: 'News', url: 'OFFICIAL:https://www.antv.gov.vn/', officialName: 'ANTV' },
-    { id: 'qpvn', name: 'CH-16 QPVN', category: 'News', url: 'OFFICIAL:https://qpvn.vn/', officialName: 'QPVN' },
-    { id: 'static', name: 'CH-17 No Signal', category: 'System', url: 'STATIC' }
+    // Prefer direct public HLS so the CRT plays video (not an "Open Official" card)
+    { id: 'vtv1', name: 'CH-01 VTV1', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtv.vn/truyen-hinh-truc-tuyen/vtv1.htm', officialName: 'VTV1' },
+    { id: 'vtv2', name: 'CH-02 VTV2', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv2_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/2', officialName: 'VTV2' },
+    { id: 'vtv3', name: 'CH-03 VTV3', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv3hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtv.vn/truyen-hinh-truc-tuyen/vtv3.html', officialName: 'VTV3' },
+    { id: 'vtv4', name: 'CH-04 VTV4', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv4_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/4', officialName: 'VTV4' },
+    { id: 'vtv5', name: 'CH-05 VTV5', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv5hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/5', officialName: 'VTV5' },
+    { id: 'vtv7', name: 'CH-06 VTV7', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda3/vtv7hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/35', officialName: 'VTV7' },
+    { id: 'vtv8', name: 'CH-07 VTV8', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda2/vtv8hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/36', officialName: 'VTV8' },
+    { id: 'vtv9', name: 'CH-08 VTV9', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda2/vtv9_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/9', officialName: 'VTV9' },
+    { id: 'htv7', name: 'CH-09 HTV7', category: 'HTV', url: 'https://dethich.pw/htv7/index.m3u8', fallbackOfficial: 'https://www.htv.com.vn/truc-tuyen?channel=1', officialName: 'HTV7' },
+    { id: 'htv9', name: 'CH-10 HTV9', category: 'HTV', url: 'https://dethich.pw/htv9/index.m3u8', fallbackOfficial: 'https://www.htv.com.vn/truc-tuyen?channel=2', officialName: 'HTV9' },
+    { id: 'htv1', name: 'CH-11 HTV1', category: 'HTV', url: 'https://dethich.pw/htv1/index.m3u8', officialName: 'HTV1' },
+    { id: 'htv2', name: 'CH-12 HTV2', category: 'HTV', url: 'https://dethich.pw/htv2/index.m3u8', officialName: 'HTV2' },
+    { id: 'htv3', name: 'CH-13 HTV3', category: 'HTV', url: 'https://dethich.pw/htv3/index.m3u8', officialName: 'HTV3' },
+    { id: 'qpvn', name: 'CH-14 QPVN', category: 'News', url: 'https://qpvn.vn/live/qpvn/master.m3u8', officialName: 'QPVN' },
+    { id: 'antv', name: 'CH-15 ANTV', category: 'News', url: 'https://liveh12.vtvprime.vn/hls/ANNINHTV/index.m3u8', officialName: 'ANTV' },
+    { id: 'cantho', name: 'CH-16 Cần Thơ TV', category: 'Local', url: 'https://live.canthotv.vn/live/tv/chunklist.m3u8', officialName: 'Cần Thơ TV' },
+    { id: 'danang1', name: 'CH-17 Đà Nẵng 1', category: 'Local', url: 'https://live.mediatech.vn/live/285b59a111d76974225a8e3004bfc31a509/chunklist.m3u8', officialName: 'Đà Nẵng 1' },
+    { id: 'static-vn', name: 'CH-18 Static', category: 'Special', url: 'STATIC' }
   ],
   us: [
-    { id: 'nasa', name: 'CH-01 NASA TV', category: 'Science', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Android/master.m3u8', officialName: 'NASA TV' },
-    { id: 'static-us', name: 'CH-02 No Signal', category: 'System', url: 'STATIC' }
+    { id: 'nasa', name: 'CH-01 NASA TV Public', category: 'USA', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Public/master.m3u8' },
+    { id: 'nasa-media', name: 'CH-02 NASA Media', category: 'USA', url: 'https://ntv2.akamaized.net/hls/live/2013923/NASA-NTV2-Media/master.m3u8' },
+    { id: 'nasa-iss', name: 'CH-03 NASA ISS Cam', category: 'USA', url: 'https://astro-web.nasa.gov/external/iss/iss.m3u8' },
+    { id: 'static-us', name: 'CH-04 Static', category: 'Special', url: 'STATIC' }
   ],
   jp: [
-    { id: 'static-jp', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+    { id: 'nhk-world', name: 'CH-01 NHK World', category: 'Japan', url: 'OFFICIAL:https://www3.nhk.or.jp/nhkworld/', officialName: 'NHK World' },
+    { id: 'static-jp', name: 'CH-02 Static', category: 'Special', url: 'STATIC' }
   ],
   kr: [
-    { id: 'static-kr', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+    { id: 'arirang', name: 'CH-01 Arirang TV', category: 'Korea', url: 'OFFICIAL:https://www.arirang.com/live', officialName: 'Arirang' },
+    { id: 'static-kr', name: 'CH-02 Static', category: 'Special', url: 'STATIC' }
   ],
   eu: [
-    { id: 'static-eu', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+    { id: 'dw', name: 'CH-01 DW English', category: 'Europe', url: 'OFFICIAL:https://www.dw.com/en/live-tv/s-9967', officialName: 'DW' },
+    { id: 'france24', name: 'CH-02 France 24 EN', category: 'Europe', url: 'OFFICIAL:https://www.france24.com/en/live', officialName: 'France 24' },
+    { id: 'euronews', name: 'CH-03 Euronews', category: 'Europe', url: 'OFFICIAL:https://www.euronews.com/live', officialName: 'Euronews' },
+    { id: 'static-eu', name: 'CH-04 Static', category: 'Special', url: 'STATIC' }
   ],
   intl: [
-    { id: 'nasa-intl', name: 'CH-01 NASA TV', category: 'Science', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Android/master.m3u8', officialName: 'NASA TV' },
-    { id: 'static-intl', name: 'CH-02 No Signal', category: 'System', url: 'STATIC' }
-  ],
-  in: [
-    { id: 'static-in', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+    { id: 'nasa-intl', name: 'CH-01 NASA TV', category: 'International', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Public/master.m3u8' },
+    { id: 'nasa-media-intl', name: 'CH-02 NASA Media', category: 'International', url: 'https://ntv2.akamaized.net/hls/live/2013923/NASA-NTV2-Media/master.m3u8' },
+    { id: 'dw-intl', name: 'CH-03 DW English', category: 'International', url: 'OFFICIAL:https://www.dw.com/en/live-tv/s-9967', officialName: 'DW' },
+    { id: 'france24-intl', name: 'CH-04 France 24', category: 'International', url: 'OFFICIAL:https://www.france24.com/en/live', officialName: 'France 24' },
+    { id: 'aljazeera', name: 'CH-05 Al Jazeera EN', category: 'International', url: 'OFFICIAL:https://www.aljazeera.com/live', officialName: 'Al Jazeera' },
+    { id: 'nhk-intl', name: 'CH-06 NHK World', category: 'International', url: 'OFFICIAL:https://www3.nhk.or.jp/nhkworld/', officialName: 'NHK World' },
+    { id: 'arirang-intl', name: 'CH-07 Arirang TV', category: 'International', url: 'OFFICIAL:https://www.arirang.com/live', officialName: 'Arirang' },
+    { id: 'static-intl', name: 'CH-08 Static', category: 'Special', url: 'STATIC' }
   ]
 };
 
@@ -186,45 +197,49 @@ function setProbeCache(map) {
 
 async function probeStreamUrl(url) {
   if (!url || url === 'STATIC') return true;
-  if (url.startsWith('OFFICIAL:')) return false; // hide pure official cards from zap list
+  // Official page cards stay in list (user can open); prefer HLS when present
+  if (url.startsWith('OFFICIAL:')) return true;
   const cache = getProbeCache();
   if (Object.prototype.hasOwnProperty.call(cache, url)) return !!cache[url];
   try {
     const resp = await fetch('/api/probe-stream?url=' + encodeURIComponent(url));
+    if (!resp.ok) {
+      // API missing/gone → do NOT drop channel
+      return true;
+    }
     const data = await resp.json();
-    cache[url] = !!(data && data.ok);
+    // If server cannot decide, keep channel
+    if (data && data.skipped) return true;
+    cache[url] = data && data.ok !== false;
     setProbeCache(cache);
     return cache[url];
   } catch (e) {
-    cache[url] = false;
-    setProbeCache(cache);
-    return false;
+    return true; // network/probe error → keep channel
   }
 }
 
 async function filterLiveChannels(list) {
+  // Keep defaults playable: only drop URLs that probe explicitly says dead (ok:false & checked)
+  // Never empty the list — fall back to original order.
+  if (!list || !list.length) return [];
   const out = [];
-  // Probe in parallel batches of 6
   const batch = 6;
   for (let i = 0; i < list.length; i += batch) {
     const slice = list.slice(i, i + batch);
     const results = await Promise.all(slice.map(async (ch) => {
+      if (!ch || !ch.url) return { ch, ok: false };
       if (ch.url === 'STATIC') return { ch, ok: true };
-      if (ch.url && ch.url.startsWith('OFFICIAL:')) return { ch, ok: false };
+      if (ch.url.startsWith('OFFICIAL:')) return { ch, ok: true };
+      // Direct HLS/media: keep by default (probe is advisory)
       const ok = await probeStreamUrl(ch.url);
-      return { ch, ok };
+      return { ch, ok: ok !== false };
     }));
-    results.forEach(r => { if (r.ok) out.push(r.ch); });
+    results.forEach(r => { if (r.ok && r.ch) out.push(r.ch); });
   }
-  // Always keep at least Static if everything dies
-  if (!out.length) {
-    const st = list.find(c => c.url === 'STATIC');
-    if (st) out.push(st);
-  }
-  // Renumber CH-xx labels for clean list
-  return out.map((ch, idx) => ({
+  const finalList = out.length ? out : list.slice();
+  return finalList.map((ch, idx) => ({
     ...ch,
-    name: ch.name.replace(/^CH-\d+\s*/, 'CH-' + String(idx + 1).padStart(2, '0') + ' ')
+    name: String(ch.name || ('CH-' + (idx + 1))).replace(/^CH-\d+\s*/, 'CH-' + String(idx + 1).padStart(2, '0') + ' ')
   }));
 }
 
