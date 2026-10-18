@@ -6,7 +6,7 @@
  */
 const path = require('path');
 const express = require('express');
-const { adminAuth, securityHeaders, rateLimit } = require('./lib/net/admin-auth');
+const { adminAuth, adminAuthStrict, securityHeaders, rateLimit } = require('./lib/net/admin-auth');
 
 const PORT = (() => {
   const n = parseInt(process.env.PORT || '8080', 10);
@@ -101,7 +101,7 @@ function mountApi() {
     const pkg = tryPkg();
 
     const ai = createAIService({ dataDir: DATA_DIR, appName: 'Pi Vintage TV', adapter });
-    mountAIRoutes(app, ai, { adminAuth });
+    mountAIRoutes(app, ai, { adminAuth, adminAuthStrict });
 
     mountFeedbackRoutes(app, createFeedbackService({
       appId: process.env.SHFH_APP_ID || 'pi-vintage-tv',
