@@ -1,14 +1,46 @@
 /* Pi Vintage TV — cinema mode + country free channels */
 /* ---- Free channels by country (public HLS / official pages) ---- */
 const CHANNELS_BY_COUNTRY = {
-  /* No third-party stream URLs ship in the app. Library comes from server / user import. */
-  vn: [],
-  us: [],
-  jp: [],
-  kr: [],
-  eu: [],
-  intl: [],
-  in: []
+  /* Default zap list — official pages + a few known public HLS when available */
+  vn: [
+    { id: 'vtv1', name: 'CH-01 VTV1', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/1', officialName: 'VTV1' },
+    { id: 'vtv2', name: 'CH-02 VTV2', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/2', officialName: 'VTV2' },
+    { id: 'vtv3', name: 'CH-03 VTV3', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/3', officialName: 'VTV3' },
+    { id: 'vtv4', name: 'CH-04 VTV4', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/4', officialName: 'VTV4' },
+    { id: 'vtv5', name: 'CH-05 VTV5', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/5', officialName: 'VTV5' },
+    { id: 'vtv7', name: 'CH-06 VTV7', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/35', officialName: 'VTV7' },
+    { id: 'vtv8', name: 'CH-07 VTV8', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/36', officialName: 'VTV8' },
+    { id: 'vtv9', name: 'CH-08 VTV9', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/9', officialName: 'VTV9' },
+    { id: 'vtv5-tn', name: 'CH-09 VTV5 Tây Nguyên', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/6', officialName: 'VTV5 Tây Nguyên' },
+    { id: 'vtv5-tnb', name: 'CH-10 VTV5 Tây Nam Bộ', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/7', officialName: 'VTV5 Tây Nam Bộ' },
+    { id: 'vtv-ct', name: 'CH-11 VTV Cần Thơ', category: 'VTV', url: 'OFFICIAL:https://vtvgo.vn/channel/37', officialName: 'VTV Cần Thơ' },
+    { id: 'htv7', name: 'CH-12 HTV7', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen?channel=1', officialName: 'HTV7' },
+    { id: 'htv9', name: 'CH-13 HTV9', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen?channel=2', officialName: 'HTV9' },
+    { id: 'htv-key', name: 'CH-14 HTV Key', category: 'HTV', url: 'OFFICIAL:https://www.htv.com.vn/truc-tuyen', officialName: 'HTV Key' },
+    { id: 'antv', name: 'CH-15 ANTV', category: 'News', url: 'OFFICIAL:https://www.antv.gov.vn/', officialName: 'ANTV' },
+    { id: 'qpvn', name: 'CH-16 QPVN', category: 'News', url: 'OFFICIAL:https://qpvn.vn/', officialName: 'QPVN' },
+    { id: 'static', name: 'CH-17 No Signal', category: 'System', url: 'STATIC' }
+  ],
+  us: [
+    { id: 'nasa', name: 'CH-01 NASA TV', category: 'Science', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Android/master.m3u8', officialName: 'NASA TV' },
+    { id: 'static-us', name: 'CH-02 No Signal', category: 'System', url: 'STATIC' }
+  ],
+  jp: [
+    { id: 'static-jp', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+  ],
+  kr: [
+    { id: 'static-kr', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+  ],
+  eu: [
+    { id: 'static-eu', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+  ],
+  intl: [
+    { id: 'nasa-intl', name: 'CH-01 NASA TV', category: 'Science', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Android/master.m3u8', officialName: 'NASA TV' },
+    { id: 'static-intl', name: 'CH-02 No Signal', category: 'System', url: 'STATIC' }
+  ],
+  in: [
+    { id: 'static-in', name: 'CH-01 No Signal', category: 'System', url: 'STATIC' }
+  ]
 };
 
 // Merge official registry if present (extra VN pages)
@@ -1661,6 +1693,7 @@ function escapeHtmlSafe(s) {
 }
 
 async function toolShowRemoteAccess() {
+  // exposed for AI panel auto-QR
   try {
     const r = await fetch('/api/app/access');
     const j = await r.json();
@@ -1771,3 +1804,5 @@ window.__playWithProxyFallback = async function(url, channelId) {
   showOsd(currentLang === 'vi' ? 'Đang dùng proxy HLS' : 'Using HLS proxy');
   return true;
 };
+
+window.toolShowRemoteAccess = toolShowRemoteAccess;

@@ -103,6 +103,18 @@ const ai = window.UniversalAI.create({
     setFabVisible(false);
     refreshStatus();
     loadSettings();
+    // Default: show remote access QR in chat once per open
+    try {
+      const chat = document.getElementById('aiChat');
+      const showQr = () => {
+        if (typeof window.toolShowRemoteAccess === 'function') return window.toolShowRemoteAccess();
+        if (window.__piVintageTv && typeof window.__piVintageTv.runAiAction === 'function')
+          return window.__piVintageTv.runAiAction('show_remote_access', {});
+        if (typeof window.runAiAction === 'function') return window.runAiAction('show_remote_access', {});
+      };
+      // Always show QR card when opening AI (default content in chat)
+      setTimeout(() => { try { showQr(); } catch (e) {} }, 200);
+    } catch (e) { console.warn('qr auto', e); }
   },
   onActions: executeActions
 });
