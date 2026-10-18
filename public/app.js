@@ -618,12 +618,13 @@ function playHlsStream(url) {
     hls.loadSource(url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      playVideoWithAudio();
+      playVideoWithAudio().finally(() => { try { endChannelBusy(); } catch (_) {} });
       scheduleVideoFit();
       scheduleStaticAutoOff();
     });
     hls.on(Hls.Events.ERROR, (e, data) => {
       if (data && data.fatal) {
+        try { endChannelBusy(); } catch (_) {}
         const ch = channels[currentChannelIndex];
         // Drop dead channel from zap list
         if (ch && ch.url && ch.url !== 'STATIC') {
@@ -653,13 +654,15 @@ function playHlsStream(url) {
     playVideoWithAudio().then(() => {
       scheduleVideoFit();
       scheduleStaticAutoOff();
-    });
+      endChannelBusy();
+    }).catch(() => endChannelBusy());
   } else {
     video.src = url;
     playVideoWithAudio().then(() => {
       scheduleVideoFit();
       scheduleStaticAutoOff();
-    });
+      endChannelBusy();
+    }).catch(() => endChannelBusy());
   }
 }
 
@@ -853,6 +856,44 @@ function deleteCustomChannel(id) {
   renderChannelManager();
 }
 
+/* ---- Channel change lock (anti rapid-swipe / elderly-friendly) ---- */
+let channelBusy = false;
+let channelBusyTimer = null;
+let channelGen = 0;
+const CHANNEL_BUSY_MS = 12000;
+
+function isChannelBusy() { return !!channelBusy; }
+
+function beginChannelBusy(label) {
+  channelBusy = true;
+  channelGen += 1;
+  const gen = channelGen;
+  if (channelBusyTimer) clearTimeout(channelBusyTimer);
+  channelBusyTimer = setTimeout(() => {
+    if (gen === channelGen) { channelBusy = false; channelBusyTimer = null; }
+  }, CHANNEL_BUSY_MS);
+  if (label) showOsd(label);
+}
+
+function endChannelBusy() {
+  channelBusy = false;
+  if (channelBusyTimer) { clearTimeout(channelBusyTimer); channelBusyTimer = null; }
+}
+
+function requestChannelChange(index, reason) {
+  if (!channels || !channels.length) return false;
+  if (!isPoweredOn) {
+    try { setPower(true); } catch (_) {}
+  }
+  if (isChannelBusy()) {
+    showOsd(currentLang === 'vi' ? '⏳ Đang tải kênh…' : '⏳ Loading channel…');
+    return false;
+  }
+  const i = ((index % channels.length) + channels.length) % channels.length;
+  playChannel(i);
+  return true;
+}
+
 function playChannel(index) {
   if (index < 0 || index >= channels.length) return;
   currentChannelIndex = index;
@@ -869,6 +910,7 @@ function playChannel(index) {
   }
   clearWatchTimers();
   if (!isPoweredOn) return;
+  beginChannelBusy(ch && ch.name);
   if (hls) { hls.destroy(); hls = null; }
 
   const officialWrap = document.getElementById('officialFrameWrap');
@@ -880,6 +922,7 @@ function playChannel(index) {
   if (ch.url === 'STATIC') {
     if (video) video.src = '';
     playStaticSound(true);
+    endChannelBusy();
     return;
   }
   if (ch.url && ch.url.startsWith('OFFICIAL:')) {
@@ -901,6 +944,7 @@ function playChannel(index) {
       }
     }
     scheduleOfficialResolve(pageUrl);
+    endChannelBusy();
     return;
   }
   playStaticSound(false);
@@ -908,12 +952,18 @@ function playChannel(index) {
     playHlsStream(ch.url);
   } else if (video) {
     video.src = ch.url;
-    playVideoWithAudio().then(() => { scheduleVideoFit(); scheduleStaticAutoOff(); });
+    playVideoWithAudio().then(() => {
+      scheduleVideoFit();
+      scheduleStaticAutoOff();
+      endChannelBusy();
+    }).catch(() => endChannelBusy());
+  } else {
+    endChannelBusy();
   }
 }
 
 /* Events */
-if (channelSelect) channelSelect.addEventListener('change', e => playChannel(parseInt(e.target.value, 10)));
+if (channelSelect) channelSelect.addEventListener('change', e => requestChannelChange(parseInt(e.target.value, 10), 'select'));
 if (countrySelect) {
   countrySelect.value = currentCountry;
   countrySelect.addEventListener('change', e => { loadCountry(e.target.value); });
@@ -947,15 +997,15 @@ document.querySelectorAll('.act-power').forEach(el => bindKnob(el, () => {
 }));
 document.querySelectorAll('.act-channel').forEach(el => bindKnob(el, () => {
   if (!isPoweredOn) return;
-  playChannel((currentChannelIndex + 1) % channels.length);
+  requestChannelChange(currentChannelIndex + 1, 'ui');
 }));
 if (btnNext) btnNext.addEventListener('click', () => {
   if (!isPoweredOn) return;
-  playChannel((currentChannelIndex + 1) % channels.length);
+  requestChannelChange(currentChannelIndex + 1, 'ui');
 });
 if (btnPrev) btnPrev.addEventListener('click', () => {
   if (!isPoweredOn) return;
-  playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+  requestChannelChange(currentChannelIndex - 1, 'ui');
 });
 if (btnStatic) btnStatic.addEventListener('click', () => {
   if (!isPoweredOn) return;
@@ -1109,13 +1159,36 @@ window.__piVintageTv = {
 };
 
 /* ---- Fullscreen (YouTube-style control on CRT) ---- */
-function toggleVideoFullscreen() {
-  const target = document.getElementById('screenInner') || document.getElementById('tv-frame-container');
+function isMobileUa() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')
+    || (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
+}
+async function lockLandscapeIfMobile() {
+  if (!isMobileUa()) return;
+  try {
+    if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+  } catch (_) {}
+}
+async function unlockOrientation() {
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (_) {}
+}
+async function toggleVideoFullscreen() {
+  const target = document.getElementById('screenInner')
+    || document.getElementById('tvVideo')
+    || document.getElementById('tv-frame-container');
   if (!target) return;
-  if (!document.fullscreenElement) {
-    (target.requestFullscreen || target.webkitRequestFullscreen || target.msRequestFullscreen || (() => {})).call(target);
-  } else {
-    (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || (() => {})).call(document);
+  try {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const req = target.requestFullscreen || target.webkitRequestFullscreen || target.msRequestFullscreen;
+      if (req) await Promise.resolve(req.call(target));
+      await lockLandscapeIfMobile();
+    } else {
+      const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+      if (ex) await Promise.resolve(ex.call(document));
+      await unlockOrientation();
+    }
+  } catch (e) {
+    console.warn('fullscreen', e);
   }
 }
 const btnFullscreen = document.getElementById('btnFullscreen');
@@ -1166,10 +1239,10 @@ function runAiAction(name, args) {
       return { ok: false, error: 'channel_not_found' };
     }
     case 'next_channel':
-      playChannel((currentChannelIndex + 1) % channels.length);
+      requestChannelChange(currentChannelIndex + 1, 'ui');
       return { ok: true };
     case 'prev_channel':
-      playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+      requestChannelChange(currentChannelIndex - 1, 'ui');
       return { ok: true };
     case 'add_channel': {
       const name = String(args.name || args.title || '').trim();
@@ -1515,10 +1588,10 @@ document.addEventListener('keydown', (e) => {
   const key = e.key;
   if (key === 'ArrowRight' || key === 'PageDown') {
     e.preventDefault();
-    if (channels.length) playChannel((currentChannelIndex + 1) % channels.length);
+    if (channels.length) requestChannelChange(currentChannelIndex + 1, 'ui');
   } else if (key === 'ArrowLeft' || key === 'PageUp') {
     e.preventDefault();
-    if (channels.length) playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+    if (channels.length) requestChannelChange(currentChannelIndex - 1, 'ui');
   } else if (key === 'ArrowUp') {
     e.preventDefault();
     if (video) video.volume = Math.min(1, (video.volume || 0.8) + 0.1);
@@ -1749,47 +1822,6 @@ if ('serviceWorker' in navigator) {
   if (window.__piVintageTv) window.__piVintageTv.runAiAction = window.runAiAction;
 })();
 
-
-/* Swipe channels on CRT / fullscreen (touch) */
-(function setupSwipeChannels() {
-  let x0 = 0, y0 = 0, t0 = 0;
-  function onStart(e) {
-    const t = e.changedTouches ? e.changedTouches[0] : e;
-    x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
-  }
-  function onEnd(e) {
-    const t = e.changedTouches ? e.changedTouches[0] : e;
-    const dx = t.clientX - x0;
-    const dy = t.clientY - y0;
-    const dt = Date.now() - t0;
-    if (dt > 900) return;
-    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
-    if (!channels || !channels.length) return;
-    if (typeof playChannel !== 'function') return;
-    if (dx < 0) playChannel((currentChannelIndex + 1) % channels.length);
-    else playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
-  }
-  function bind(el) {
-    if (!el || el.__swipeBound) return;
-    el.__swipeBound = true;
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchend', onEnd, { passive: true });
-  }
-  function rebind() {
-    bind(document.getElementById('screenInner'));
-    bind(document.getElementById('tv-frame-container'));
-    bind(document.getElementById('video'));
-    bind(document.querySelector('.crt-viewport'));
-    bind(document.querySelector('.crt-screen-container'));
-    // Fullscreen element (video or wrapper)
-    if (document.fullscreenElement) bind(document.fullscreenElement);
-  }
-  rebind();
-  document.addEventListener('fullscreenchange', () => setTimeout(rebind, 30));
-  document.addEventListener('webkitfullscreenchange', () => setTimeout(rebind, 30));
-  // Late DOM
-  window.addEventListener('load', rebind);
-})();
 
 /* ---- smart_import + remote QR in AI chat ---- */
 async function toolSmartImport(args) {
@@ -2098,3 +2130,109 @@ async function toolGithubSearch(args) {
   }
 }
 window.toolGithubSearch = toolGithubSearch;
+
+
+/* ============================================================
+   YouTube Shorts-like gestures on CRT / video
+   - Double-tap: toggle fullscreen (landscape on mobile)
+   - Swipe H or V: change channel (blocked while loading)
+   - Tap when TV off: power on
+   ============================================================ */
+(function setupShortsGestures() {
+  const DOUBLE_MS = 280;
+  const TAP_MOVE = 18;
+  const SWIPE_MIN = 42;
+  let x0 = 0, y0 = 0, t0 = 0;
+  let lastTapAt = 0, lastTapX = 0, lastTapY = 0;
+  let moved = false;
+
+  function onStart(e) {
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
+    moved = false;
+  }
+  function onMove(e) {
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    if (Math.abs(t.clientX - x0) > TAP_MOVE || Math.abs(t.clientY - y0) > TAP_MOVE) moved = true;
+  }
+  function onEnd(e) {
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    const dt = Date.now() - t0;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+
+    if (!isPoweredOn) {
+      if (dt < 700 && adx < 40 && ady < 40) {
+        try { markInteracted(); } catch (_) {}
+        try { setPower(true); } catch (_) {}
+        showOsd(currentLang === 'vi' ? 'TV bật' : 'TV on');
+      }
+      return;
+    }
+    try { markInteracted(); } catch (_) {}
+
+    if (dt < 900 && (adx >= SWIPE_MIN || ady >= SWIPE_MIN)) {
+      if (typeof isChannelBusy === 'function' && isChannelBusy()) {
+        showOsd(currentLang === 'vi' ? '⏳ Đang tải kênh…' : '⏳ Loading channel…');
+        return;
+      }
+      if (ady >= adx) {
+        if (dy < 0) requestChannelChange(currentChannelIndex + 1, 'swipe-v');
+        else requestChannelChange(currentChannelIndex - 1, 'swipe-v');
+      } else {
+        if (dx < 0) requestChannelChange(currentChannelIndex + 1, 'swipe-h');
+        else requestChannelChange(currentChannelIndex - 1, 'swipe-h');
+      }
+      return;
+    }
+
+    if (!moved && dt < 450 && adx < TAP_MOVE && ady < TAP_MOVE) {
+      const now = Date.now();
+      if (now - lastTapAt < DOUBLE_MS && Math.abs(t.clientX - lastTapX) < 40 && Math.abs(t.clientY - lastTapY) < 40) {
+        lastTapAt = 0;
+        toggleVideoFullscreen();
+        return;
+      }
+      lastTapAt = now; lastTapX = t.clientX; lastTapY = t.clientY;
+    }
+  }
+
+  function bind(el) {
+    if (!el || el.__shortsBound) return;
+    el.__shortsBound = true;
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: true });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('dblclick', (ev) => {
+      if (!isPoweredOn) { try { setPower(true); } catch (_) {} return; }
+      try { markInteracted(); } catch (_) {}
+      toggleVideoFullscreen();
+      ev.preventDefault();
+    });
+    el.addEventListener('click', () => {
+      if (!isPoweredOn) {
+        try { markInteracted(); } catch (_) {}
+        try { setPower(true); } catch (_) {}
+        showOsd(currentLang === 'vi' ? 'TV bật' : 'TV on');
+      }
+    });
+  }
+  function rebind() {
+    [
+      document.getElementById('screenInner'),
+      document.getElementById('tv-frame-container'),
+      document.getElementById('tvVideo'),
+      document.getElementById('staticCanvas'),
+      document.querySelector('.crt-viewport'),
+      document.querySelector('.crt-screen-container'),
+      document.fullscreenElement
+    ].forEach(bind);
+  }
+  rebind();
+  document.addEventListener('fullscreenchange', () => {
+    setTimeout(rebind, 40);
+    if (!document.fullscreenElement && typeof unlockOrientation === 'function') unlockOrientation();
+  });
+  document.addEventListener('webkitfullscreenchange', () => setTimeout(rebind, 40));
+  window.addEventListener('load', rebind);
+})();
