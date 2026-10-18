@@ -1,57 +1,14 @@
 /* Pi Vintage TV — cinema mode + country free channels */
 /* ---- Free channels by country (public HLS / official pages) ---- */
 const CHANNELS_BY_COUNTRY = {
-  vn: [
-    // Prefer direct public HLS so the CRT plays video (not an "Open Official" card)
-    { id: 'vtv1', name: 'CH-01 VTV1', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtv.vn/truyen-hinh-truc-tuyen/vtv1.htm', officialName: 'VTV1' },
-    { id: 'vtv2', name: 'CH-02 VTV2', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv2_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/2', officialName: 'VTV2' },
-    { id: 'vtv3', name: 'CH-03 VTV3', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv3hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtv.vn/truyen-hinh-truc-tuyen/vtv3.html', officialName: 'VTV3' },
-    { id: 'vtv4', name: 'CH-04 VTV4', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv4_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/4', officialName: 'VTV4' },
-    { id: 'vtv5', name: 'CH-05 VTV5', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda1/vtv5hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/5', officialName: 'VTV5' },
-    { id: 'vtv7', name: 'CH-06 VTV7', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda3/vtv7hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/35', officialName: 'VTV7' },
-    { id: 'vtv8', name: 'CH-07 VTV8', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda2/vtv8hd_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/36', officialName: 'VTV8' },
-    { id: 'vtv9', name: 'CH-08 VTV9', category: 'VTV', url: 'https://vips-livecdn.fptplay.net/hda2/vtv9_vhls.smil/chunklist_b5000000.m3u8', fallbackOfficial: 'https://vtvgo.vn/channel/9', officialName: 'VTV9' },
-    { id: 'htv7', name: 'CH-09 HTV7', category: 'HTV', url: 'https://dethich.pw/htv7/index.m3u8', fallbackOfficial: 'https://www.htv.com.vn/truc-tuyen?channel=1', officialName: 'HTV7' },
-    { id: 'htv9', name: 'CH-10 HTV9', category: 'HTV', url: 'https://dethich.pw/htv9/index.m3u8', fallbackOfficial: 'https://www.htv.com.vn/truc-tuyen?channel=2', officialName: 'HTV9' },
-    { id: 'htv1', name: 'CH-11 HTV1', category: 'HTV', url: 'https://dethich.pw/htv1/index.m3u8', officialName: 'HTV1' },
-    { id: 'htv2', name: 'CH-12 HTV2', category: 'HTV', url: 'https://dethich.pw/htv2/index.m3u8', officialName: 'HTV2' },
-    { id: 'htv3', name: 'CH-13 HTV3', category: 'HTV', url: 'https://dethich.pw/htv3/index.m3u8', officialName: 'HTV3' },
-    { id: 'qpvn', name: 'CH-14 QPVN', category: 'News', url: 'https://qpvn.vn/live/qpvn/master.m3u8', officialName: 'QPVN' },
-    { id: 'antv', name: 'CH-15 ANTV', category: 'News', url: 'https://liveh12.vtvprime.vn/hls/ANNINHTV/index.m3u8', officialName: 'ANTV' },
-    { id: 'cantho', name: 'CH-16 Cần Thơ TV', category: 'Local', url: 'https://live.canthotv.vn/live/tv/chunklist.m3u8', officialName: 'Cần Thơ TV' },
-    { id: 'danang1', name: 'CH-17 Đà Nẵng 1', category: 'Local', url: 'https://live.mediatech.vn/live/285b59a111d76974225a8e3004bfc31a509/chunklist.m3u8', officialName: 'Đà Nẵng 1' },
-    { id: 'static-vn', name: 'CH-18 Static', category: 'Special', url: 'STATIC' }
-  ],
-  us: [
-    { id: 'nasa', name: 'CH-01 NASA TV Public', category: 'USA', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Public/master.m3u8' },
-    { id: 'nasa-media', name: 'CH-02 NASA Media', category: 'USA', url: 'https://ntv2.akamaized.net/hls/live/2013923/NASA-NTV2-Media/master.m3u8' },
-    { id: 'nasa-iss', name: 'CH-03 NASA ISS Cam', category: 'USA', url: 'https://astro-web.nasa.gov/external/iss/iss.m3u8' },
-    { id: 'static-us', name: 'CH-04 Static', category: 'Special', url: 'STATIC' }
-  ],
-  jp: [
-    { id: 'nhk-world', name: 'CH-01 NHK World', category: 'Japan', url: 'OFFICIAL:https://www3.nhk.or.jp/nhkworld/', officialName: 'NHK World' },
-    { id: 'static-jp', name: 'CH-02 Static', category: 'Special', url: 'STATIC' }
-  ],
-  kr: [
-    { id: 'arirang', name: 'CH-01 Arirang TV', category: 'Korea', url: 'OFFICIAL:https://www.arirang.com/live', officialName: 'Arirang' },
-    { id: 'static-kr', name: 'CH-02 Static', category: 'Special', url: 'STATIC' }
-  ],
-  eu: [
-    { id: 'dw', name: 'CH-01 DW English', category: 'Europe', url: 'OFFICIAL:https://www.dw.com/en/live-tv/s-9967', officialName: 'DW' },
-    { id: 'france24', name: 'CH-02 France 24 EN', category: 'Europe', url: 'OFFICIAL:https://www.france24.com/en/live', officialName: 'France 24' },
-    { id: 'euronews', name: 'CH-03 Euronews', category: 'Europe', url: 'OFFICIAL:https://www.euronews.com/live', officialName: 'Euronews' },
-    { id: 'static-eu', name: 'CH-04 Static', category: 'Special', url: 'STATIC' }
-  ],
-  intl: [
-    { id: 'nasa-intl', name: 'CH-01 NASA TV', category: 'International', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-Public/master.m3u8' },
-    { id: 'nasa-media-intl', name: 'CH-02 NASA Media', category: 'International', url: 'https://ntv2.akamaized.net/hls/live/2013923/NASA-NTV2-Media/master.m3u8' },
-    { id: 'dw-intl', name: 'CH-03 DW English', category: 'International', url: 'OFFICIAL:https://www.dw.com/en/live-tv/s-9967', officialName: 'DW' },
-    { id: 'france24-intl', name: 'CH-04 France 24', category: 'International', url: 'OFFICIAL:https://www.france24.com/en/live', officialName: 'France 24' },
-    { id: 'aljazeera', name: 'CH-05 Al Jazeera EN', category: 'International', url: 'OFFICIAL:https://www.aljazeera.com/live', officialName: 'Al Jazeera' },
-    { id: 'nhk-intl', name: 'CH-06 NHK World', category: 'International', url: 'OFFICIAL:https://www3.nhk.or.jp/nhkworld/', officialName: 'NHK World' },
-    { id: 'arirang-intl', name: 'CH-07 Arirang TV', category: 'International', url: 'OFFICIAL:https://www.arirang.com/live', officialName: 'Arirang' },
-    { id: 'static-intl', name: 'CH-08 Static', category: 'Special', url: 'STATIC' }
-  ]
+  /* No third-party stream URLs ship in the app. Library comes from server / user import. */
+  vn: [],
+  us: [],
+  jp: [],
+  kr: [],
+  eu: [],
+  intl: [],
+  in: []
 };
 
 // Merge official registry if present (extra VN pages)
@@ -615,41 +572,90 @@ function saveCustomChannels(list) {
 function renderChannelManager() {
   const listEl = document.getElementById('channelManagerList');
   if (!listEl) return;
-  listEl.innerHTML = '';
-  channels.forEach((ch, idx) => {
-    const row = document.createElement('div');
-    row.className = 'ch-row' + (ch.id && String(ch.id).startsWith('custom-') ? ' ch-custom' : '');
-    row.innerHTML = '<span class="ch-row-name"></span><span class="ch-row-actions"></span>';
-    row.querySelector('.ch-row-name').textContent = ch.name;
-    const actions = row.querySelector('.ch-row-actions');
-    if (ch.id && String(ch.id).startsWith('custom-')) {
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'ch-mini-btn';
-      editBtn.textContent = '✎';
-      editBtn.title = t('editChannel');
-      editBtn.addEventListener('click', () => {
-        editingChannelId = ch.id;
-        if (customName) customName.value = ch.name.replace(/^CH-\d+\s*/, '');
-        if (customUrl) customUrl.value = ch.url || '';
-      });
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'ch-mini-btn danger';
-      delBtn.textContent = '✕';
-      delBtn.title = t('deleteChannel');
-      delBtn.addEventListener('click', () => {
-        deleteCustomChannel(ch.id);
-      });
-      actions.appendChild(editBtn);
-      actions.appendChild(delBtn);
-    } else {
-      actions.textContent = '•';
-      actions.style.opacity = '0.4';
-    }
-    row.addEventListener('dblclick', () => playChannel(idx));
-    listEl.appendChild(row);
+  listEl.textContent = '';
+  // Prefer server library view when available
+  const filterSel = document.getElementById('chGroupFilter');
+  const groupFilter = filterSel ? filterSel.value : '';
+
+  const byGroup = {};
+  (channels || []).forEach((ch, idx) => {
+    const g = ch.category || ch.group || 'General';
+    if (!byGroup[g]) byGroup[g] = [];
+    byGroup[g].push({ ch, idx });
   });
+  const groups = Object.keys(byGroup).sort();
+  if (filterSel && filterSel.options.length <= 1) {
+    filterSel.innerHTML = '<option value=\"\">' + (currentLang === 'vi' ? 'Tất cả nhóm' : 'All groups') + '</option>';
+    groups.forEach(g => {
+      const o = document.createElement('option');
+      o.value = g; o.textContent = g + ' (' + byGroup[g].length + ')';
+      filterSel.appendChild(o);
+    });
+  }
+
+  const showGroups = groupFilter ? [groupFilter] : groups;
+  showGroups.forEach(g => {
+    if (!byGroup[g]) return;
+    const head = document.createElement('div');
+    head.className = 'ch-group-head';
+    head.textContent = g + ' · ' + byGroup[g].length;
+    listEl.appendChild(head);
+    byGroup[g].forEach(({ ch, idx }) => {
+      const row = document.createElement('div');
+      row.className = 'ch-row';
+      const title = document.createElement('button');
+      title.type = 'button';
+      title.className = 'ch-row-name';
+      title.textContent = ch.name || ('CH ' + (idx + 1));
+      title.addEventListener('click', () => {
+        playChannel(idx);
+        if (addBox) addBox.style.display = 'none';
+      });
+      const actions = document.createElement('div');
+      actions.className = 'ch-row-actions';
+      const fav = document.createElement('button');
+      fav.type = 'button';
+      fav.className = 'btn';
+      fav.textContent = ch.favorite ? '★' : '☆';
+      fav.title = 'Favorite';
+      fav.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (ch.id && !String(ch.id).startsWith('custom-')) {
+          await fetch('/api/library/channels/' + encodeURIComponent(ch.id), {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ favorite: !ch.favorite })
+          });
+          ch.favorite = !ch.favorite;
+        } else {
+          ch.favorite = !ch.favorite;
+        }
+        renderChannelManager();
+      });
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn danger';
+      del.textContent = '×';
+      del.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm(currentLang === 'vi' ? 'Xóa kênh này?' : 'Remove this channel?')) return;
+        if (ch.id && !String(ch.id).startsWith('custom-')) {
+          await fetch('/api/library/channels/' + encodeURIComponent(ch.id), { method: 'DELETE' });
+          await loadLibraryIntoTv();
+        } else if (ch.id) {
+          deleteCustomChannel(ch.id);
+        }
+        renderChannelManager();
+      });
+      actions.appendChild(fav);
+      actions.appendChild(del);
+      row.appendChild(title);
+      row.appendChild(actions);
+      listEl.appendChild(row);
+    });
+  });
+  if (!(channels || []).length) {
+    listEl.textContent = currentLang === 'vi' ? 'Kho trống — dùng AI hoặc Nhập M3U' : 'Empty — use AI or Import M3U';
+  }
 }
 
 function deleteCustomChannel(id) {
@@ -1138,7 +1144,9 @@ async function loadLibraryIntoTv() {
     channels = j.channels.map((c, i) => ({
       id: c.id,
       name: 'CH-' + String(i + 1).padStart(2, '0') + ' ' + c.name,
-      category: c.group || c.country || 'Library',
+      category: c.group || (c.categories && c.categories[0]) || c.country || 'Library',
+      group: c.group || 'General',
+      favorite: !!c.favorite,
       url: (c.sources && c.sources[0] && c.sources[0].url) || '',
       sources: c.sources || [],
       officialName: c.name
@@ -1578,28 +1586,55 @@ if ('serviceWorker' in navigator) {
 /* ---- smart_import + remote QR in AI chat ---- */
 async function toolSmartImport(args) {
   args = args || {};
-  const query = args.query || args.q || args.value || args.message || '';
-  showOsd(currentLang === 'vi' ? 'AI đang nhập kênh…' : 'AI importing channels…');
+  let query = args.query || args.q || args.value || args.message || '';
+  const confirm = !!(args.confirm || args.force);
+  if (args.usePending && window.__pendingSmartImport && window.__pendingSmartImport.query) {
+    query = window.__pendingSmartImport.query;
+  }
+  showOsd(currentLang === 'vi' ? 'AI đang tìm nguồn…' : 'AI searching catalogs…');
   try {
     const r = await fetch('/api/tools/smart_import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query, includeGithub: /github/i.test(query), confirm })
     });
     const j = await r.json();
+    const append = window.appendAiMsg || window.__appendAiMsg;
     if (!j.ok) {
-      showOsd(j.error || 'smart_import failed');
-      if (window.appendAiMsg) {
-        window.appendAiMsg('ai', escapeHtmlSafe('Import failed: ' + (j.error || 'error')));
-      }
+      const msg = (currentLang === 'vi')
+        ? ('Không khớp nguồn: ' + (j.message || j.error || '') + (j.intent && j.intent.length ? ' · intent: ' + j.intent.join(', ') : ''))
+        : ('No source match: ' + (j.message || j.error || ''));
+      if (append) append('ai', msg);
+      showOsd(j.error || 'no match');
       return j;
     }
+    if (j.dryRun || j.needsConfirmation) {
+      const sample = (j.sample || []).slice(0, 8).map(escapeHtmlSafe).join('<br>• ');
+      const cand = (j.candidates || []).map(c => c.label || c.id).join(', ');
+      const msg = (currentLang === 'vi')
+        ? `🔎 <b>Xem trước</b> — <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b><br>` +
+          `${j.channelCount || 0} kênh · Ứng viên: ${escapeHtmlSafe(cand)}<br>` +
+          (sample ? '• ' + sample + '<br>' : '') +
+          `<br>Trả lời <b>"xác nhận nhập"</b> để lưu vào kho server. Không tự nhập khi chưa xác nhận.`
+        : `🔎 <b>Preview</b> — <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b><br>` +
+          `${j.channelCount || 0} channels · Candidates: ${escapeHtmlSafe(cand)}<br>` +
+          (sample ? '• ' + sample + '<br>' : '') +
+          `<br>Reply <b>"confirm import"</b> to save to the server library. Nothing is imported until you confirm.`;
+      if (append) append('ai', msg);
+      // stash last preview query for confirm
+      window.__pendingSmartImport = { query, sourceId: j.sourceId };
+      showOsd((currentLang === 'vi' ? 'Xem trước ' : 'Preview ') + (j.channelCount || 0));
+      return j;
+    }
+    const groups = j.groups ? Object.entries(j.groups).slice(0, 12).map(([k,v]) => k + ': ' + v).join(' · ') : '';
     const msg = (currentLang === 'vi')
-      ? `Đã nhập từ <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b>: <b>+${j.added || 0}</b> kênh mới (tổng kho ${j.total || j.channelCount || '?'}). Nguồn công khai allowlist — app chỉ là trình phát.`
-      : `Imported from <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b>: <b>+${j.added || 0}</b> new (library ${j.total || j.channelCount || '?'}). Public allowlisted source — app is a player only.`;
-    if (window.appendAiMsg) window.appendAiMsg('ai', msg);
+      ? `✅ Đã nhập <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b>: +${j.added || 0} · tổng ${j.total || j.channelCount}<br>${escapeHtmlSafe(groups)}`
+      : `✅ Imported <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b>: +${j.added || 0} · total ${j.total || j.channelCount}<br>${escapeHtmlSafe(groups)}`;
+    if (append) append('ai', msg);
+    window.__pendingSmartImport = null;
     showOsd((currentLang === 'vi' ? 'Đã nhập +' : 'Imported +') + (j.added || 0));
     if (typeof loadLibraryIntoTv === 'function') await loadLibraryIntoTv();
+    if (typeof renderChannelManager === 'function') renderChannelManager();
     return j;
   } catch (e) {
     showOsd(String(e.message || e));
@@ -1616,25 +1651,42 @@ async function toolShowRemoteAccess() {
     const r = await fetch('/api/app/access');
     const j = await r.json();
     const url = j.publicUrl || j.localUrl || location.origin;
-    const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(url);
-    // Prefer same-origin canvas fallback if offline: still show link
+    let qrBlock = '';
+    try {
+      if (typeof qrcode === 'function') {
+        const qr = qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        qrBlock = qr.createSvgTag({ cellSize: 4, margin: 2 });
+      }
+    } catch (_) {}
+    if (!qrBlock) {
+      // fallback image APIs
+      const u = encodeURIComponent(url);
+      qrBlock = '<img class="ai-qr" alt="QR" width="200" height="200" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + u + '" onerror="this.onerror=null;this.src=\'https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=' + u + '\'" />';
+    }
     const html =
       '<div class="ai-remote-card">' +
       '<div style="font-weight:600;margin-bottom:6px">' +
-      (currentLang === 'vi' ? 'Truy cập TV từ xa' : 'Remote TV access') +
+      (currentLang === 'vi' ? '📡 Truy cập TV từ xa' : '📡 Remote TV access') +
       '</div>' +
       '<div style="font-size:0.85rem;word-break:break-all;margin-bottom:8px"><a href="' + escapeHtmlSafe(url) + '" target="_blank" rel="noopener">' + escapeHtmlSafe(url) + '</a></div>' +
-      '<img class="ai-qr" src="' + qrImg + '" alt="QR" width="200" height="200" style="border-radius:12px;background:#fff;padding:6px;max-width:100%;height:auto" />' +
-      '<div style="opacity:.7;font-size:0.75rem;margin-top:6px">' +
+      '<div class="ai-qr-wrap" style="text-align:center;background:#fff;border-radius:12px;padding:8px;display:inline-block">' + qrBlock + '</div>' +
+      '<div style="opacity:.75;font-size:0.75rem;margin-top:8px">' +
       (currentLang === 'vi'
-        ? 'Quét QR bằng điện thoại · IP public:port do SoloHost cấp. Đặt SOLOHOST_PUBLIC_URL nếu link chưa đúng.'
-        : 'Scan with phone · public IP:port from SoloHost. Set SOLOHOST_PUBLIC_URL if the link is wrong.') +
-      '</div></div>';
-    if (window.appendAiMsg) window.appendAiMsg('ai', html);
+        ? 'Quét QR bằng điện thoại. Cấu hình SOLOHOST_PUBLIC_URL=http://IP:PORT trên SoloHost nếu link chưa đúng.'
+        : 'Scan with your phone. Set SOLOHOST_PUBLIC_URL=http://IP:PORT on SoloHost if the link is wrong.') +
+      '</div>' +
+      '<button type="button" class="btn primary" style="margin-top:8px" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + url.replace(/'/g, '') + '\')">' +
+      (currentLang === 'vi' ? 'Sao chép link' : 'Copy link') +
+      '</button></div>';
+    const append = window.appendAiMsg || window.__appendAiMsg;
+    if (append) append('ai', html);
     else showOsd(url);
     return { ok: true, url };
   } catch (e) {
-    if (window.appendAiMsg) window.appendAiMsg('ai', escapeHtmlSafe(String(e.message || e)));
+    const append = window.appendAiMsg || window.__appendAiMsg;
+    if (append) append('ai', escapeHtmlSafe(String(e.message || e)));
     return { ok: false };
   }
 }
@@ -1649,3 +1701,59 @@ async function toolShowRemoteAccess() {
   };
   if (window.__piVintageTv) window.__piVintageTv.runAiAction = window.runAiAction;
 })();
+document.getElementById("chGroupFilter")?.addEventListener("change", () => renderChannelManager());
+
+/* VOD Archive.org search */
+document.getElementById('btnVodSearch')?.addEventListener('click', async () => {
+  const q = document.getElementById('vodQ')?.value || 'charlie chaplin';
+  const box = document.getElementById('vodResults');
+  if (!box) return;
+  box.textContent = '';
+  try {
+    const r = await fetch('/api/vod/search?q=' + encodeURIComponent(q));
+    const j = await r.json();
+    (j.items || []).forEach(it => {
+      const b = document.createElement('a');
+      b.className = 'hub-item';
+      b.href = it.page;
+      b.target = '_blank';
+      b.rel = 'noopener';
+      b.textContent = (it.title || it.id) + (it.year ? ' (' + it.year + ')' : '');
+      const s = document.createElement('small');
+      s.textContent = 'archive.org · public catalog';
+      b.appendChild(s);
+      box.appendChild(b);
+    });
+    if (!(j.items || []).length) box.textContent = currentLang === 'vi' ? 'Không có kết quả' : 'No results';
+  } catch (e) {
+    box.textContent = String(e.message || e);
+  }
+});
+
+/* HLS via proxy when direct fails (CORS / mixed content) */
+window.__playWithProxyFallback = async function(url, channelId) {
+  if (!video || !window.Hls) return;
+  const tryDirect = () => new Promise((resolve) => {
+    if (window.__hls) { try { window.__hls.destroy(); } catch(_){} }
+    const hls = new Hls({ enableWorker: true });
+    window.__hls = hls;
+    let done = false;
+    hls.on(Hls.Events.ERROR, (_, data) => {
+      if (data && data.fatal && !done) { done = true; resolve(false); }
+    });
+    hls.on(Hls.Events.MANIFEST_PARSED, () => { if (!done) { done = true; resolve(true); } });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    setTimeout(() => { if (!done) { done = true; resolve(false); } }, 8000);
+  });
+  const ok = await tryDirect();
+  if (ok) return true;
+  const proxy = '/api/proxy/hls?c=' + encodeURIComponent(channelId || '') + '&u=' + encodeURIComponent(url);
+  if (window.__hls) { try { window.__hls.destroy(); } catch(_){} }
+  const hls = new Hls({ enableWorker: true });
+  window.__hls = hls;
+  hls.loadSource(proxy);
+  hls.attachMedia(video);
+  showOsd(currentLang === 'vi' ? 'Đang dùng proxy HLS' : 'Using HLS proxy');
+  return true;
+};

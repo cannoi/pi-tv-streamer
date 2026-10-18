@@ -26,7 +26,6 @@ function renderDonate(donate) {
   box.innerHTML = '<strong>Ủng hộ tác giả</strong>' + rows.slice(0, 12).map(([k, v]) =>
     '<div class="fb-acc"><div class="fb-k">' + escapeHtml(k) + '</div><code class="fb-val">' + escapeHtml(v) + '</code></div>').join('');
 }
-window.appendAiMsg = appendMsg;
 function setUnread(n) {
   const badge = document.getElementById('aiBadge');
   const tabBadge = document.getElementById('fbTabBadge');
@@ -87,14 +86,14 @@ async function executeActions(actions) {
 const aiChat = document.getElementById('aiChat');
 const aiInput = document.getElementById('aiInput');
 function appendMsg(role, html) {
-  // exposed for QR / tool rich messages
-
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   div.innerHTML = html;
   if (aiChat) { aiChat.appendChild(div); aiChat.scrollTop = aiChat.scrollHeight; }
   return div;
 }
+window.appendAiMsg = appendMsg;
+window.__appendAiMsg = appendMsg;
 
 const ai = window.UniversalAI.create({
   button: document.getElementById('aiFab'),

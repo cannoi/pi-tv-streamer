@@ -7,7 +7,7 @@
   <title>Pi Vintage TV</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#1a1815">
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17"></script>
+  <script src="/vendor/hls.min.js"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="ai-panel.css">
   <style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style>
@@ -144,6 +144,7 @@
         <button type="button" class="hub-tab" data-hub="radio">Radio</button>
         <button type="button" class="hub-tab" data-hub="media">Media</button>
         <button type="button" class="hub-tab" data-hub="podcast">Podcast</button>
+        <button type="button" class="hub-tab" data-hub="vod">VOD</button>
         <button type="button" class="hub-tab" data-hub="epg">EPG</button>
       </div>
       <div class="hub-pane active" id="hub-discover">
@@ -171,6 +172,11 @@
         <div id="podcastResults" class="hub-results"></div>
         <audio id="podcastPlayer" controls style="width:100%;margin-top:8px;"></audio>
       </div>
+      <div class="hub-pane" id="hub-vod">
+        <input type="text" id="vodQ" placeholder="Search public domain films (Archive.org)">
+        <button type="button" id="btnVodSearch" class="btn primary">Search VOD</button>
+        <div id="vodResults" class="hub-results"></div>
+      </div>
       <div class="hub-pane" id="hub-epg">
         <input type="text" id="epgUrl" placeholder="XMLTV URL">
         <button type="button" id="btnEpgLoad" class="btn primary">Load EPG</button>
@@ -193,6 +199,7 @@
 
       <div class="ch-pane active" id="pane-list">
         <div class="lib-stats" id="libStats">—</div>
+        <select id="chGroupFilter" class="ch-group-filter" aria-label="Group"><option value="">All groups</option></select>
         <div class="ch-manager-list" id="channelManagerList"></div>
         <button type="button" id="btnLoadLibrary" class="btn primary full" data-i18n="loadLibrary">Nạp thư viện vào TV</button>
       </div>
@@ -351,6 +358,7 @@
 
 
   <script src="tv-channels.js"></script>
+  <script src="/qrcode.min.js"></script>
   <script src="app.js"></script>
   <script src="tv-hub.js"></script>
   <script src="/ai-module/ai-module.js"></script>

@@ -1178,3 +1178,39 @@ body.cinema-mode .tv-stage {
   border: 1px solid rgba(201,166,107,0.35);
 }
 #aiMessages img.ai-qr { display:block; margin: 4px auto; }
+.ch-group-filter {
+  width: 100%;
+  background: #12100e;
+  border: 1px solid #3a3530;
+  color: var(--text, #ebe6df);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+.ch-group-head {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent, #c9a66b);
+  margin: 8px 0 4px;
+}
+.ch-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #2a2620;
+}
+.ch-row-name {
+  flex: 1;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--text, #ebe6df);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 2px;
+}
+.ch-row-actions { display: flex; gap: 4px; }
+.ch-row-actions .btn { padding: 2px 8px; min-width: 28px; }
+.ai-qr-wrap svg { width: 200px; height: 200px; }
