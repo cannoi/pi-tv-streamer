@@ -1082,15 +1082,18 @@ window.addEventListener('DOMContentLoaded', () => {
   // Show history UI immediately from browser memory (before network).
   try { renderHistoryUi(); } catch (_) {}
   restoreVolumeFromLocal();
-  loadCountry(currentCountry);
   initCanvas();
   applyLanguage();
   setBwMode(isBwMode);
   const saved = localStorage.getItem('pi_vintage_model') || 'tv-international-red';
   applyModel(MODEL_BADGES[saved] ? saved : 'tv-international-red');
-  setPower(true);
+  // Keep playback off until the library and saved channel have been restored.
+  // setPower(true) here would play the default channel and overwrite saved history.
+  setPower(false);
   fitTvToViewport();
-  // loadCountry() restores last channel from browser + server; history never starts empty on this device.
+  // A single ordered bootstrap restores the shared library before user/channel state.
+  // This avoids the old race where loadCountry() overwrote the library after reload.
+  bootFromServer();
   // Persist volume changes while watching.
   if (video) {
     video.addEventListener('volumechange', () => persistVolumeLocal());
@@ -1327,12 +1330,15 @@ async function refreshLibStats() {
   }
 }
 
-async function loadLibraryIntoTv() {
+async function loadLibraryIntoTv(options = {}) {
+  const browserSavedId = (function(){ try { return localStorage.getItem(LS.lastChannel) || ''; } catch (_) { return ''; } })();
+  const previousId = options.automatic ? browserSavedId : ((channels[currentChannelIndex] && channels[currentChannelIndex].id) || browserSavedId);
   try {
     showOsd(currentLang === 'vi' ? 'Đang nạp kho…' : 'Loading library…');
     const r = await fetch('/api/library/channels?limit=500&offset=0');
+    if (!r.ok) throw new Error('library_http_' + r.status);
     const j = await r.json();
-    if (!j.ok || !j.channels || !j.channels.length) {
+    if (!j.ok || !Array.isArray(j.channels) || !j.channels.length) {
       showOsd(currentLang === 'vi' ? 'Kho trống — hãy Nhập M3U' : 'Library empty — Import M3U');
       return;
     }
@@ -1346,9 +1352,11 @@ async function loadLibraryIntoTv() {
       sources: c.sources || [],
       officialName: c.name
     })).filter(c => c.url);
-    currentChannelIndex = 0;
+    const savedId = (serverUserState && serverUserState.lastChannelId) || previousId;
+    const restoredIndex = savedId ? channels.findIndex(c => String(c.id) === String(savedId)) : -1;
+    currentChannelIndex = restoredIndex >= 0 ? restoredIndex : 0;
     renderChannelSelect();
-    if (isPoweredOn) playChannel(0);
+    if (isPoweredOn) playChannel(currentChannelIndex);
     showOsd((currentLang === 'vi' ? 'Đã nạp ' : 'Loaded ') + channels.length + (currentLang === 'vi' ? ' kênh' : ' ch'));
   } catch (e) {
     showOsd('Library load failed');
@@ -1962,12 +1970,16 @@ window.__playWithProxyFallback = async function(url, channelId) {
 window.toolShowRemoteAccess = toolShowRemoteAccess;
 
 
-(async function bootFromServer() {
+let bootPromise = null;
+function bootFromServer() {
+  if (bootPromise) return bootPromise;
+  bootPromise = (async () => {
   try {
     // 1) Load shared library (disk) — same for all devices on this instance
     const st = await fetch('/api/library/stats').then(r => r.json()).catch(() => ({}));
-    if (st && st.total > 0) {
-      await loadLibraryIntoTv();
+    if (st && Number(st.total) > 0) {
+      await fetchUserState();
+      await loadLibraryIntoTv({ automatic: true });
     } else {
       // Use built-in country defaults when server library empty
       const code = localStorage.getItem('pi_vintage_country') || 'vn';
@@ -2006,8 +2018,12 @@ window.toolShowRemoteAccess = toolShowRemoteAccess;
   } catch (e) {
     console.warn('bootFromServer', e);
   }
+  // Start playback only after library + saved channel state have been resolved.
+  setPower(true);
   applyLanguage();
-})();
+  })();
+  return bootPromise;
+}
 
 function renderHistoryUi() {
   const box = document.getElementById('historyList');

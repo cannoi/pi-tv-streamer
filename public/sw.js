@@ -1,4 +1,4 @@
-const CACHE = 'pi-vintage-tv-v1.9.5';
+const CACHE = 'pi-vintage-tv-v1.9.17';
 const PRECACHE = [
   '/', '/index.html', '/style.css', '/app.js', '/ai-panel.css', '/ai-panel.js',
   '/manifest.webmanifest', '/ai-icon.png', '/qrcode.min.js', '/vendor/hls.min.js'
