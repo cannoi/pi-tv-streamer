@@ -1055,3 +1055,247 @@ window.__piVintageTv = Object.assign(window.__piVintageTv || {}, {
   toggleVideoFullscreen,
   channels: () => channels.slice()
 });
+
+/* ============================================================
+   Channel Library (M3U import) — keeps Retro UI
+   ============================================================ */
+const i18nExtra = {
+  vi: {
+    tabList: 'Danh sách', tabImport: 'Nhập M3U', tabSingle: 'Thêm 1 kênh',
+    importHint: 'Nhập playlist M3U (file vn.m3u, URL iptv-org, hoặc dán text).',
+    importUrl: 'URL playlist', importPaste: 'Hoặc dán nội dung M3U',
+    importFile: 'Hoặc chọn file .m3u / .txt',
+    previewImport: 'Xem trước', doImport: 'Nhập vào kho',
+    loadLibrary: 'Nạp thư viện vào TV', manageChannels: 'Kênh / Kho'
+  },
+  en: {
+    tabList: 'List', tabImport: 'Import M3U', tabSingle: 'Add one',
+    importHint: 'Import an M3U playlist (file, URL, or paste text).',
+    importUrl: 'Playlist URL', importPaste: 'Or paste M3U text',
+    importFile: 'Or choose .m3u / .txt file',
+    previewImport: 'Preview', doImport: 'Import to library',
+    loadLibrary: 'Load library into TV', manageChannels: 'Channels / Library'
+  }
+};
+
+function applyExtraI18n() {
+  const pack = i18nExtra[currentLang] || i18nExtra.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (pack[k]) el.textContent = pack[k];
+  });
+}
+
+// Extend applyLanguage if exists
+const _applyLanguageOrig = typeof applyLanguage === 'function' ? applyLanguage : null;
+if (_applyLanguageOrig) {
+  window.applyLanguage = function() {
+    _applyLanguageOrig();
+    applyExtraI18n();
+  };
+}
+
+// Tabs
+document.querySelectorAll('.ch-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ch-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    const pane = document.getElementById('pane-' + tab.dataset.tab);
+    if (pane) pane.classList.add('active');
+    if (tab.dataset.tab === 'list') refreshLibStats();
+  });
+});
+
+const btnCloseManager = document.getElementById('btnCloseManager');
+if (btnCloseManager) btnCloseManager.addEventListener('click', () => {
+  if (addBox) addBox.style.display = 'none';
+});
+
+async function refreshLibStats() {
+  const el = document.getElementById('libStats');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/library/stats');
+    const j = await r.json();
+    el.textContent = currentLang === 'vi'
+      ? `Kho: ${j.total || 0} kênh · sống ${j.live || 0} · chết ${j.dead || 0} · ? ${j.unknown || 0}`
+      : `Library: ${j.total || 0} · live ${j.live || 0} · dead ${j.dead || 0} · ? ${j.unknown || 0}`;
+  } catch {
+    el.textContent = currentLang === 'vi' ? 'Không đọc được kho kênh' : 'Library unavailable';
+  }
+}
+
+async function loadLibraryIntoTv() {
+  try {
+    showOsd(currentLang === 'vi' ? 'Đang nạp kho…' : 'Loading library…');
+    const r = await fetch('/api/library/channels?limit=500&offset=0');
+    const j = await r.json();
+    if (!j.ok || !j.channels || !j.channels.length) {
+      showOsd(currentLang === 'vi' ? 'Kho trống — hãy Nhập M3U' : 'Library empty — Import M3U');
+      return;
+    }
+    channels = j.channels.map((c, i) => ({
+      id: c.id,
+      name: 'CH-' + String(i + 1).padStart(2, '0') + ' ' + c.name,
+      category: c.group || c.country || 'Library',
+      url: (c.sources && c.sources[0] && c.sources[0].url) || '',
+      sources: c.sources || [],
+      officialName: c.name
+    })).filter(c => c.url);
+    currentChannelIndex = 0;
+    renderChannelSelect();
+    if (isPoweredOn) playChannel(0);
+    showOsd((currentLang === 'vi' ? 'Đã nạp ' : 'Loaded ') + channels.length + (currentLang === 'vi' ? ' kênh' : ' ch'));
+  } catch (e) {
+    showOsd('Library load failed');
+  }
+}
+
+const btnLoadLibrary = document.getElementById('btnLoadLibrary');
+if (btnLoadLibrary) btnLoadLibrary.addEventListener('click', loadLibraryIntoTv);
+
+async function readImportPayload() {
+  const url = (document.getElementById('importUrl')?.value || '').trim();
+  const text = (document.getElementById('importText')?.value || '').trim();
+  const fileInput = document.getElementById('importFile');
+  if (url) return { url };
+  if (text) return { text };
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    const t = await fileInput.files[0].text();
+    return { text: t };
+  }
+  return null;
+}
+
+function showImportResult(obj) {
+  const el = document.getElementById('importResult');
+  if (!el) return;
+  el.hidden = false;
+  el.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+}
+
+async function runImport(dryRun) {
+  const payload = await readImportPayload();
+  if (!payload) {
+    showImportResult(currentLang === 'vi' ? 'Nhập URL, dán text hoặc chọn file.' : 'Provide URL, text, or file.');
+    return;
+  }
+  payload.dryRun = !!dryRun;
+  payload.mode = 'merge';
+  showImportResult(currentLang === 'vi' ? 'Đang xử lý…' : 'Working…');
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    // Optional admin token from localStorage for non-localhost deploys
+    const tok = localStorage.getItem('pi_vintage_admin_token');
+    if (tok) headers['X-Admin-Token'] = tok;
+    const r = await fetch('/api/library/import', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (!r.ok || j.ok === false) {
+      showImportResult(j);
+      return;
+    }
+    if (dryRun) {
+      showImportResult(
+        (currentLang === 'vi'
+          ? `Xem trước: ${j.channelCount} kênh (từ ${j.rawCount} mục)`
+          : `Preview: ${j.channelCount} channels (from ${j.rawCount} entries)`) +
+        '\n' + JSON.stringify(j.sample || j, null, 2)
+      );
+    } else {
+      showImportResult(
+        (currentLang === 'vi'
+          ? `Đã nhập: +${j.added} · gộp ${j.merged} · tổng kho ${j.total}`
+          : `Imported: +${j.added} · merged ${j.merged} · total ${j.total}`)
+      );
+      await refreshLibStats();
+      await loadLibraryIntoTv();
+    }
+  } catch (e) {
+    showImportResult(String(e.message || e));
+  }
+}
+
+const btnImportDry = document.getElementById('btnImportDry');
+const btnImportGo = document.getElementById('btnImportGo');
+if (btnImportDry) btnImportDry.addEventListener('click', () => runImport(true));
+if (btnImportGo) btnImportGo.addEventListener('click', () => runImport(false));
+
+// Auto-load library on boot if it has channels
+(async function bootLibrary() {
+  try {
+    const r = await fetch('/api/library/stats');
+    const j = await r.json();
+    if (j && j.total > 0) {
+      await loadLibraryIntoTv();
+    }
+  } catch (_) {}
+  applyExtraI18n();
+})();
+
+/* ---- AI tools: find_sources / import_source ---- */
+async function toolFindSources(args) {
+  const q = (args && (args.query || args.q || args.value)) || '';
+  const r = await fetch('/api/tools/find_sources?q=' + encodeURIComponent(q));
+  const j = await r.json();
+  showOsd((currentLang === 'vi' ? 'Nguồn: ' : 'Sources: ') + (j.sources || []).length);
+  return j;
+}
+
+async function toolImportSource(args) {
+  args = args || {};
+  const headers = { 'Content-Type': 'application/json' };
+  const tok = localStorage.getItem('pi_vintage_admin_token');
+  if (tok) headers['X-Admin-Token'] = tok;
+  const body = {
+    sourceId: args.sourceId,
+    url: args.url,
+    dryRun: args.dryRun !== false && !args.confirm,
+    confirm: !!args.confirm,
+    filter: args.filter || {},
+    mode: args.mode || 'merge'
+  };
+  if (args.dryRun === false || args.confirm === true) {
+    body.dryRun = false;
+    body.confirm = true;
+  }
+  const r = await fetch('/api/tools/import_source', { method: 'POST', headers, body: JSON.stringify(body) });
+  const j = await r.json();
+  const box = document.getElementById('importResult');
+  if (box) {
+    box.hidden = false;
+    box.textContent = JSON.stringify(j, null, 2);
+  }
+  if (j.ok && j.dryRun) {
+    showOsd((currentLang === 'vi' ? 'Xem trước ' : 'Preview ') + (j.channelCount || 0) + (j.needsConfirmation ? ' — cần xác nhận' : ''));
+  } else if (j.ok && !j.dryRun) {
+    showOsd((currentLang === 'vi' ? 'Đã nhập +' : 'Imported +') + (j.added || 0));
+    if (typeof loadLibraryIntoTv === 'function') await loadLibraryIntoTv();
+  } else {
+    showOsd(j.error || 'import failed');
+  }
+  return j;
+}
+
+async function toolSearchChannels(args) {
+  const q = (args && (args.q || args.query || args.value)) || '';
+  const r = await fetch('/api/tools/search_channels?q=' + encodeURIComponent(q) + '&limit=20');
+  return r.json();
+}
+
+(function hookAiActions() {
+  const prev = window.runAiAction || (window.__piVintageTv && window.__piVintageTv.runAiAction);
+  const wrapped = async function(name, args) {
+    if (name === 'find_sources') return toolFindSources(args || {});
+    if (name === 'import_source') return toolImportSource(args || {});
+    if (name === 'search_channels') return toolSearchChannels(args || {});
+    if (typeof prev === 'function') return prev(name, args);
+    return { ok: false, error: 'unknown' };
+  };
+  window.runAiAction = wrapped;
+  window.__piVintageTv = Object.assign(window.__piVintageTv || {}, { runAiAction: wrapped });
+})();

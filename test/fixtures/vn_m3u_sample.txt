@@ -1,0 +1,19 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="AnGiangTV1.vn@SD",An Giang TV1 (1080p) [Geo-blocked]
+https://tv.angiangtv.vn/live/kgtv/kgtv.m3u8
+#EXTINF:-1 tvg-id="AnNinhTV.vn@HD",ANTV (1080p)
+https://liveh12.vtvprime.vn/hls/ANNINHTV/index.m3u8
+#EXTINF:-1 tvg-id="AnNinhTV.vn@HD",ANTV (720p)
+https://backup.example.com/antv/index.m3u8
+#EXTINF:-1 tvg-id="QPVN.vn@HD",QPVN HD (1080p)
+https://qpvn.vn/live/qpvn/master.m3u8
+#EXTINF:-1 tvg-id="HaTinhTV.vn@SD",Ha Tinh TV (720p) [Not 24/7]
+https://liveh34.vtvprime.vn/hls/HANOI1TV/index.m3u8
+#EXTINF:-1 tvg-id="VTV1.vn@HD",VTV1 (1080p)
+https://vips-livecdn.fptplay.net/hda1/vtv1hd_vhls.smil/chunklist_b5000000.m3u8
+#EXTINF:-1 tvg-id="HTV7.vn@SD",HTV7 (720p)
+https://dethich.pw/htv7/index.m3u8
+#EXTINF:-1 tvg-id="OldToken.vn@SD",Old Token Channel (480p)
+https://example.com/live.m3u8?token=abc&requestTime=1586309420781
+#EXTINF:-1 tvg-id="HttpOnly.vn@SD",HTTP Only (720p)
+http://example.com/channel.m3u8

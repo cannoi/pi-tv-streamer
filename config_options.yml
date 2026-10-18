@@ -4,4 +4,78 @@ description: "tạo cho tôi một app xem TV"
 footer_hint: Ready to run on Pi Desktop SoloHost.
 output_file: .env
 after_save: Saved. Start the app from SoloHost.
-fields: []
+fields:
+  - name: AI_API_KEY
+    label: Ai Api Key
+    type: password
+    preserve_if_blank: true
+    help: "Required by the application."
+  - name: AI_BASE_URL
+    label: Ai Base Url
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: AI_DEBUG
+    label: Ai Debug
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: AI_EXTRA_HEADERS
+    label: Ai Extra Headers
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: AI_MODE
+    label: Ai Mode
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: AI_MODEL
+    label: Ai Model
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: AI_PROVIDER
+    label: Ai Provider
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: AI_TIMEOUT_MS
+    label: Ai Timeout Ms
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: HOST_PORT
+    label: Host Port
+    type: number
+    help: "Application runtime setting."
+  - name: SHFH_APP_ID
+    label: Shfh App Id
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: SHFH_APP_NAME
+    label: Shfh App Name
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: SHFH_APP_VERSION
+    label: Shfh App Version
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: SHFH_HUB_ID
+    label: Shfh Hub Id
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: SHFH_HUB_URL
+    label: Shfh Hub Url
+    type: text
+    preserve_if_blank: true
+    help: "Application setting."
+  - name: SHFH_INGEST_TOKEN
+    label: Shfh Ingest Token
+    type: password
+    preserve_if_blank: true
+    help: "Required by the application."

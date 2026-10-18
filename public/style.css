@@ -1034,3 +1034,101 @@ body.cinema-mode .tv-stage {
   width: 8px;
   height: 8px;
 }
+
+/* ---- Channel manager tabs (retro panel) ---- */
+.ch-manager-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.btn-x {
+  background: transparent;
+  border: 1px solid #5a5045;
+  color: var(--muted, #9a9288);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.ch-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0 10px;
+  flex-wrap: wrap;
+}
+.ch-tab {
+  flex: 1 1 auto;
+  min-width: 88px;
+  background: #1f1c18;
+  border: 1px solid #3a3530;
+  color: var(--muted, #9a9288);
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+.ch-tab.active {
+  background: #2a241c;
+  color: var(--accent, #c9a66b);
+  border-color: #6a5a40;
+}
+.ch-pane { display: none; flex-direction: column; gap: 8px; }
+.ch-pane.active { display: flex; }
+.ch-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted, #9a9288);
+  line-height: 1.35;
+}
+.ch-label {
+  font-size: 0.72rem;
+  color: var(--muted, #9a9288);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.file-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+}
+.file-label input[type="file"] {
+  font-size: 0.8rem;
+  color: var(--text, #ebe6df);
+}
+#importText, #importUrl {
+  width: 100%;
+  background: #12100e;
+  border: 1px solid #3a3530;
+  color: var(--text, #ebe6df);
+  border-radius: 8px;
+  padding: 8px;
+  font-family: var(--mono, monospace);
+  font-size: 0.78rem;
+  resize: vertical;
+}
+.import-result {
+  margin: 0;
+  max-height: 140px;
+  overflow: auto;
+  background: #0a0908;
+  border: 1px solid #2a2620;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.72rem;
+  color: #b8c99a;
+  white-space: pre-wrap;
+}
+.lib-stats {
+  font-size: 0.78rem;
+  color: var(--accent, #c9a66b);
+}
+.btn.full { width: 100%; }
+.custom-add-box {
+  max-width: min(420px, 96vw);
+  max-height: min(78vh, 640px);
+  overflow: auto;
+}

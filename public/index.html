@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#1a100e">
   <title>Pi Vintage TV</title>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="ai-panel.css">
   <style>.paf-made-by{position:fixed;right:8px;bottom:8px;width:min(72px,12vw);max-width:12vw;height:auto;object-fit:contain;opacity:.5;background:transparent;padding:0;border:0;box-shadow:none;filter:none;pointer-events:none;z-index:30}</style>
@@ -133,15 +133,48 @@
     <button id="btnExitCinema" class="exit-cinema-btn" style="display:none;" title="Exit">✕</button>
 
     <div class="custom-add-box" id="addBox" style="display:none;">
-      <div class="ch-manager-title" data-i18n="manageChannels">Channels</div>
-      <div class="ch-manager-list" id="channelManagerList"></div>
-      <div class="ch-manager-form">
-        <input type="text" id="customName" placeholder="Name / Tên">
-        <input type="text" id="customUrl" placeholder="URL (.m3u8 or page)">
+      <div class="ch-manager-title">
+        <span data-i18n="manageChannels">Kênh / Channels</span>
+        <button type="button" id="btnCloseManager" class="btn-x" aria-label="Close">×</button>
+      </div>
+      <div class="ch-tabs" role="tablist">
+        <button type="button" class="ch-tab active" data-tab="list" data-i18n="tabList">Danh sách</button>
+        <button type="button" class="ch-tab" data-tab="import" data-i18n="tabImport">Nhập M3U</button>
+        <button type="button" class="ch-tab" data-tab="single" data-i18n="tabSingle">Thêm 1 kênh</button>
+      </div>
+
+      <div class="ch-pane active" id="pane-list">
+        <div class="lib-stats" id="libStats">—</div>
+        <div class="ch-manager-list" id="channelManagerList"></div>
+        <button type="button" id="btnLoadLibrary" class="btn primary full" data-i18n="loadLibrary">Nạp thư viện vào TV</button>
+      </div>
+
+      <div class="ch-pane" id="pane-import">
+        <p class="ch-hint" data-i18n="importHint">Nhập playlist M3U (file, URL hoặc dán text). Giữ giao diện Retro.</p>
+        <label class="ch-label" data-i18n="importUrl">URL playlist</label>
+        <input type="text" id="importUrl" placeholder="https://…/playlist.m3u">
+        <label class="ch-label" data-i18n="importPaste">Hoặc dán nội dung M3U</label>
+        <textarea id="importText" rows="5" placeholder="#EXTM3U&#10;#EXTINF:-1,…&#10;https://…"></textarea>
+        <label class="ch-label file-label">
+          <span data-i18n="importFile">Hoặc chọn file .m3u / .txt</span>
+          <input type="file" id="importFile" accept=".m3u,.m3u8,.txt,text/plain">
+        </label>
         <div class="ch-manager-actions">
-          <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Save</button>
-          <button id="btnDeleteChannel" class="btn danger" data-i18n="deleteChannel">Delete</button>
-          <button id="btnCancelEdit" class="btn" data-i18n="cancel">Cancel</button>
+          <button type="button" id="btnImportDry" class="btn" data-i18n="previewImport">Xem trước</button>
+          <button type="button" id="btnImportGo" class="btn primary" data-i18n="doImport">Nhập vào kho</button>
+        </div>
+        <pre class="import-result" id="importResult" hidden></pre>
+      </div>
+
+      <div class="ch-pane" id="pane-single">
+        <div class="ch-manager-form">
+          <input type="text" id="customName" placeholder="Name / Tên">
+          <input type="text" id="customUrl" placeholder="URL (.m3u8)">
+          <div class="ch-manager-actions">
+            <button id="btnSaveCustom" class="btn primary" data-i18n="saveChannel">Save</button>
+            <button id="btnDeleteChannel" class="btn danger" data-i18n="deleteChannel">Delete</button>
+            <button id="btnCancelEdit" class="btn" data-i18n="cancel">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
