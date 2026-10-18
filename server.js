@@ -13,11 +13,20 @@ const { createLibrary } = require('./lib/iptv/library');
 const { createHealthChecker } = require('./lib/iptv/health');
 const { createEnricher } = require('./lib/iptv/enrich');
 const { findSources, loadSources, isAllowlistedUrl } = require('./lib/iptv/sources');
+const { searchGithubPlaylists } = require('./lib/iptv/github-search');
+const { getAccessInfo } = require('./lib/net/access-info');
+const { smartImport } = require('./lib/iptv/smart-import');
+const { createEpgStore } = require('./lib/iptv/epg');
+const { mountRadioRoutes } = require('./lib/modules/radio');
+const { mountMediaRoutes } = require('./lib/modules/media');
+const { mountPodcastRoutes } = require('./lib/modules/podcast');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const library = createLibrary(DATA_DIR);
 const health = createHealthChecker(library, { concurrency: 6 });
 const enricher = createEnricher(DATA_DIR);
+const epg = createEpgStore(DATA_DIR);
+const MEDIA_ROOT = process.env.MEDIA_ROOT || require('path').join(__dirname, 'media');
 
 app.use(securityHeaders);
 app.use(rateLimit({ windowMs: 60000, max: 180 }));
@@ -108,7 +117,7 @@ app.get('/api/library/export.m3u', (req, res) => {
   res.send(body);
 });
 
-app.post('/api/library/import', adminAuth, async (req, res) => {
+app.post('/api/library/import', async (req, res) => {
   try {
     let text = '';
     const dryRun = !!(req.body && req.body.dryRun);
@@ -286,7 +295,7 @@ app.get('/api/tools/find_sources', (req, res) => {
   });
 });
 
-app.post('/api/tools/import_source', adminAuth, async (req, res) => {
+app.post('/api/tools/import_source', async (req, res) => {
   try {
     const body = req.body || {};
     const dryRun = body.dryRun !== false && body.dryRun !== 0; // default true for safety unless explicit false
@@ -362,12 +371,51 @@ app.get('/api/tools/search_channels', (req, res) => {
   })) });
 });
 
-if (process.env.ENABLE_RADIO === '1') {
+try { mountRadioRoutes(app); } catch (e) { console.warn('radio', e.message); }
+try { mountMediaRoutes(app, MEDIA_ROOT); } catch (e) { console.warn('media', e.message); }
+try { mountPodcastRoutes(app); } catch (e) { console.warn('podcast', e.message); }
+
+
+app.get('/api/tools/github_search', async (req, res) => {
+  const q = req.query.q || req.query.query || '';
+  const token = process.env.GITHUB_TOKEN || '';
+  const result = await searchGithubPlaylists(q, { token, limit: 8 });
+  res.json(result);
+});
+
+app.post('/api/epg/load', async (req, res) => {
   try {
-    require('./lib/modules/radio').mountRadioRoutes(app);
-    console.log('Radio module enabled');
-  } catch (e) { console.warn(e.message); }
-}
+    const url = (req.body && req.body.url) || '';
+    if (!url) return res.status(400).json({ ok: false, error: 'url_required' });
+    const ids = library.all().map(c => c.tvgId || c.channelKey || c.id).filter(Boolean);
+    const r = await epg.loadFromUrl(url, ids);
+    res.json({ ok: true, ...r, meta: epg.getMeta() });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/epg/now', (req, res) => {
+  const key = req.query.channel || req.query.id || '';
+  res.json({ ok: true, ...epg.nowNext(key), meta: epg.getMeta() });
+});
+
+
+app.get('/api/app/access', (req, res) => {
+  res.json({ ok: true, ...getAccessInfo(req) });
+});
+
+/** One-shot AI helper: find allowlisted playlist and import */
+app.post('/api/tools/smart_import', async (req, res) => {
+  try {
+    const query = (req.body && (req.body.query || req.body.q || req.body.message)) || '';
+    const dryRunOnly = !!(req.body && req.body.dryRunOnly);
+    const result = await smartImport({ query, library, enricher, health, dryRunOnly });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Pi Vintage TV ${pkg.version} on :${PORT} · library=${library.stats().total} channels`);

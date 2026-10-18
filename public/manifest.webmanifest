@@ -1,0 +1,14 @@
+{
+  "name": "Pi Vintage TV",
+  "short_name": "VintageTV",
+  "description": "Retro TV entertainment hub",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0d0b",
+  "theme_color": "#1a1815",
+  "lang": "vi",
+  "icons": [
+    { "src": "/ai-icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/ai-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

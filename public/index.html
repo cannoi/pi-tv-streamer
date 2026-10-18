@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#1a100e">
   <title>Pi Vintage TV</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#1a1815">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="ai-panel.css">
@@ -129,7 +131,53 @@
       <button id="btnStatic" class="ctrl-btn" title="Static">📡</button>
       <button id="btnCinema" class="ctrl-btn" title="TV only">⛶</button>
       <button id="btnAddModal" class="ctrl-btn" title="Channels">✎</button>
+      <button id="btnHub" class="ctrl-btn" title="Hub">✦</button>
     </div>
+    
+    <div class="hub-panel" id="hubPanel" style="display:none;" aria-label="Entertainment Hub">
+      <div class="hub-head">
+        <strong data-i18n="hubTitle">Trung tâm giải trí</strong>
+        <button type="button" id="btnCloseHub" class="btn-x">×</button>
+      </div>
+      <div class="hub-tabs">
+        <button type="button" class="hub-tab active" data-hub="discover">Discover</button>
+        <button type="button" class="hub-tab" data-hub="radio">Radio</button>
+        <button type="button" class="hub-tab" data-hub="media">Media</button>
+        <button type="button" class="hub-tab" data-hub="podcast">Podcast</button>
+        <button type="button" class="hub-tab" data-hub="epg">EPG</button>
+      </div>
+      <div class="hub-pane active" id="hub-discover">
+        <p class="ch-hint">Tìm playlist theo ý bạn (GitHub công khai) → xem trước → nhập. Không khóa cứng kho link.</p>
+        <input type="text" id="hubSearchQ" placeholder="vietnam iptv / news m3u / …">
+        <div class="ch-manager-actions">
+          <button type="button" id="btnHubSearch" class="btn primary">Tìm trên GitHub</button>
+        </div>
+        <div id="hubSearchResults" class="hub-results"></div>
+      </div>
+      <div class="hub-pane" id="hub-radio">
+        <input type="text" id="radioQ" placeholder="Radio search…">
+        <button type="button" id="btnRadioSearch" class="btn primary">Search Radio</button>
+        <div id="radioResults" class="hub-results"></div>
+        <audio id="radioPlayer" controls style="width:100%;margin-top:8px;"></audio>
+      </div>
+      <div class="hub-pane" id="hub-media">
+        <button type="button" id="btnMediaRefresh" class="btn">Quét ./media</button>
+        <div id="mediaResults" class="hub-results"></div>
+        <video id="mediaPlayer" controls style="width:100%;max-height:180px;display:none;"></video>
+      </div>
+      <div class="hub-pane" id="hub-podcast">
+        <input type="text" id="podcastUrl" placeholder="RSS feed URL">
+        <button type="button" id="btnPodcastLoad" class="btn primary">Load RSS</button>
+        <div id="podcastResults" class="hub-results"></div>
+        <audio id="podcastPlayer" controls style="width:100%;margin-top:8px;"></audio>
+      </div>
+      <div class="hub-pane" id="hub-epg">
+        <input type="text" id="epgUrl" placeholder="XMLTV URL">
+        <button type="button" id="btnEpgLoad" class="btn primary">Load EPG</button>
+        <pre id="epgMeta" class="import-result" hidden></pre>
+      </div>
+    </div>
+
     <button id="btnExitCinema" class="exit-cinema-btn" style="display:none;" title="Exit">✕</button>
 
     <div class="custom-add-box" id="addBox" style="display:none;">

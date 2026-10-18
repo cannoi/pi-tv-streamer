@@ -1132,3 +1132,49 @@ body.cinema-mode .tv-stage {
   max-height: min(78vh, 640px);
   overflow: auto;
 }
+
+/* Entertainment Hub panel (retro chrome) */
+.hub-panel {
+  position: fixed;
+  right: 12px;
+  bottom: 72px;
+  width: min(400px, 94vw);
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  z-index: 50;
+  background: linear-gradient(180deg, #241f1a, #161310);
+  border: 2px solid #5a4a38;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+  padding: 12px;
+  color: var(--text, #ebe6df);
+}
+.hub-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.hub-tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+.hub-tab {
+  background:#1a1612; border:1px solid #3a3530; color:#9a9288;
+  border-radius:8px; padding:5px 8px; font-size:0.72rem; cursor:pointer;
+}
+.hub-tab.active { color:#c9a66b; border-color:#6a5a40; }
+.hub-pane { display:none; flex-direction:column; gap:8px; }
+.hub-pane.active { display:flex; }
+.hub-results { display:flex; flex-direction:column; gap:6px; max-height:240px; overflow:auto; }
+.hub-item {
+  text-align:left; background:#12100e; border:1px solid #2a2620; border-radius:8px;
+  padding:8px; color:#ebe6df; cursor:pointer; font-size:0.8rem;
+}
+.hub-item:hover { border-color:#c9a66b; }
+.hub-item small { display:block; color:#9a9288; margin-top:3px; }
+.epg-osd {
+  position:absolute; left:10px; bottom:36px; z-index:27;
+  font-size:0.72rem; color:#b8e0a8; text-shadow:0 0 4px #000;
+  max-width:70%; pointer-events:none;
+}
+.ai-remote-card {
+  margin-top: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(201,166,107,0.35);
+}
+#aiMessages img.ai-qr { display:block; margin: 4px auto; }

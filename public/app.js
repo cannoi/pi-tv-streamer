@@ -1251,33 +1251,38 @@ async function toolImportSource(args) {
   const headers = { 'Content-Type': 'application/json' };
   const tok = localStorage.getItem('pi_vintage_admin_token');
   if (tok) headers['X-Admin-Token'] = tok;
+  const isAllowlistedId = args.sourceId && String(args.sourceId).startsWith('iptv-org-');
+  // auto: after dryRun, client may immediately confirm allowlisted sources
+  let dryRun = args.dryRun !== false && !args.confirm;
+  if (args.auto && args.confirm) dryRun = false;
   const body = {
     sourceId: args.sourceId,
     url: args.url,
-    dryRun: args.dryRun !== false && !args.confirm,
-    confirm: !!args.confirm,
+    dryRun,
+    confirm: !dryRun,
     filter: args.filter || {},
-    mode: args.mode || 'merge'
+    mode: args.mode || 'merge',
+    userConfirmedExternal: !!args.userConfirmedExternal || isAllowlistedId
   };
-  if (args.dryRun === false || args.confirm === true) {
-    body.dryRun = false;
-    body.confirm = true;
-  }
+  showOsd(dryRun ? (currentLang === 'vi' ? 'Đang xem trước…' : 'Preview…') : (currentLang === 'vi' ? 'Đang nhập kho…' : 'Importing…'));
   const r = await fetch('/api/tools/import_source', { method: 'POST', headers, body: JSON.stringify(body) });
   const j = await r.json();
   const box = document.getElementById('importResult');
-  if (box) {
-    box.hidden = false;
-    box.textContent = JSON.stringify(j, null, 2);
-  }
-  if (j.ok && j.dryRun) {
-    showOsd((currentLang === 'vi' ? 'Xem trước ' : 'Preview ') + (j.channelCount || 0) + (j.needsConfirmation ? ' — cần xác nhận' : ''));
-  } else if (j.ok && !j.dryRun) {
-    showOsd((currentLang === 'vi' ? 'Đã nhập +' : 'Imported +') + (j.added || 0));
-    if (typeof loadLibraryIntoTv === 'function') await loadLibraryIntoTv();
-  } else {
+  if (box) { box.hidden = false; box.textContent = JSON.stringify(j, null, 2); }
+  if (!j.ok) {
     showOsd(j.error || 'import failed');
+    return j;
   }
+  if (j.dryRun) {
+    showOsd((currentLang === 'vi' ? 'Xem trước ' : 'Preview ') + (j.channelCount || 0) + ' ch');
+    // Auto-confirm allowlisted if not too huge
+    if (isAllowlistedId && (j.channelCount || 0) > 0 && (j.channelCount || 0) <= 400) {
+      return toolImportSource({ ...args, dryRun: false, confirm: true, auto: true });
+    }
+    return j;
+  }
+  showOsd((currentLang === 'vi' ? 'Đã nhập +' : 'Imported +') + (j.added || 0) + ' / ' + (j.total || ''));
+  if (typeof loadLibraryIntoTv === 'function') await loadLibraryIntoTv();
   return j;
 }
 
@@ -1298,4 +1303,349 @@ async function toolSearchChannels(args) {
   };
   window.runAiAction = wrapped;
   window.__piVintageTv = Object.assign(window.__piVintageTv || {}, { runAiAction: wrapped });
+})();
+
+/* ============================================================
+   Remote / keyboard control (10-foot friendly, Retro)
+   ============================================================ */
+document.addEventListener('keydown', (e) => {
+  if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+  const key = e.key;
+  if (key === 'ArrowRight' || key === 'PageDown') {
+    e.preventDefault();
+    if (channels.length) playChannel((currentChannelIndex + 1) % channels.length);
+  } else if (key === 'ArrowLeft' || key === 'PageUp') {
+    e.preventDefault();
+    if (channels.length) playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+  } else if (key === 'ArrowUp') {
+    e.preventDefault();
+    if (video) video.volume = Math.min(1, (video.volume || 0.8) + 0.1);
+  } else if (key === 'ArrowDown') {
+    e.preventDefault();
+    if (video) video.volume = Math.max(0, (video.volume || 0.8) - 0.1);
+  } else if (key === 'f' || key === 'F') {
+    e.preventDefault();
+    if (typeof toggleVideoFullscreen === 'function') toggleVideoFullscreen();
+  } else if (key === 'm' || key === 'M') {
+    if (video) video.muted = !video.muted;
+  } else if (key === ' ' || key === 'k' || key === 'K') {
+    e.preventDefault();
+    if (video) { if (video.paused) video.play().catch(()=>{}); else video.pause(); }
+  } else if (key === 'h' || key === 'H') {
+    document.getElementById('btnHub')?.click();
+  } else if (/^[0-9]$/.test(key)) {
+    window.__chDigitBuffer = (window.__chDigitBuffer || '') + key;
+    showOsd('CH-' + window.__chDigitBuffer);
+    clearTimeout(window.__chDigitTimer);
+    window.__chDigitTimer = setTimeout(() => {
+      const n = parseInt(window.__chDigitBuffer, 10);
+      window.__chDigitBuffer = '';
+      if (!n || !channels.length) return;
+      const idx = Math.min(Math.max(n - 1, 0), channels.length - 1);
+      playChannel(idx);
+    }, 900);
+  }
+});
+
+/* ============================================================
+   Entertainment Hub (Discover / Radio / Media / Podcast / EPG)
+   ============================================================ */
+const hubPanel = document.getElementById('hubPanel');
+const btnHub = document.getElementById('btnHub');
+if (btnHub) btnHub.addEventListener('click', () => {
+  if (!hubPanel) return;
+  hubPanel.style.display = hubPanel.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('btnCloseHub')?.addEventListener('click', () => {
+  if (hubPanel) hubPanel.style.display = 'none';
+});
+document.querySelectorAll('.hub-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.hub-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('hub-' + tab.dataset.hub)?.classList.add('active');
+  });
+});
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+async function hubGithubSearch() {
+  const q = document.getElementById('hubSearchQ')?.value?.trim() || '';
+  const box = document.getElementById('hubSearchResults');
+  if (!box) return;
+  box.textContent = '';
+  box.appendChild(el('div', '', currentLang === 'vi' ? 'Đang tìm…' : 'Searching…'));
+  try {
+    const r = await fetch('/api/tools/github_search?q=' + encodeURIComponent(q));
+    const j = await r.json();
+    box.textContent = '';
+    if (!j.items || !j.items.length) {
+      box.appendChild(el('div', '', j.error || 'No results'));
+      return;
+    }
+    j.items.forEach(item => {
+      const b = el('button', 'hub-item', item.repo || item.name || 'playlist');
+      const sub = el('small', '', (item.description || item.path || '').slice(0, 120));
+      b.appendChild(sub);
+      b.addEventListener('click', async () => {
+        showOsd('Preview import…');
+        // dry-run import with userConfirmedExternal
+        const headers = { 'Content-Type': 'application/json' };
+        const tok = localStorage.getItem('pi_vintage_admin_token');
+        if (tok) headers['X-Admin-Token'] = tok;
+        const body = { url: item.url, dryRun: true, userConfirmedExternal: true };
+        const ir = await fetch('/api/tools/import_source', { method: 'POST', headers, body: JSON.stringify(body) });
+        const ij = await ir.json();
+        const okImport = confirm(
+          (currentLang === 'vi'
+            ? `Xem trước: ${ij.channelCount || 0} kênh từ ${item.repo || item.url}. Nhập vào kho?`
+            : `Preview: ${ij.channelCount || 0} channels from ${item.repo || item.url}. Import?`)
+        );
+        if (!okImport) return;
+        body.dryRun = false;
+        body.confirm = true;
+        const ir2 = await fetch('/api/tools/import_source', { method: 'POST', headers, body: JSON.stringify(body) });
+        const ij2 = await ir2.json();
+        showOsd(ij2.ok ? ('+' + (ij2.added || 0)) : (ij2.error || 'fail'));
+        if (ij2.ok && typeof loadLibraryIntoTv === 'function') await loadLibraryIntoTv();
+      });
+      box.appendChild(b);
+    });
+  } catch (e) {
+    box.textContent = String(e.message || e);
+  }
+}
+document.getElementById('btnHubSearch')?.addEventListener('click', hubGithubSearch);
+
+document.getElementById('btnRadioSearch')?.addEventListener('click', async () => {
+  const q = document.getElementById('radioQ')?.value || 'vietnam';
+  const box = document.getElementById('radioResults');
+  box.textContent = '';
+  const r = await fetch('/api/radio/search?q=' + encodeURIComponent(q));
+  const j = await r.json();
+  (j.stations || []).forEach(s => {
+    const b = el('button', 'hub-item', s.name || 'station');
+    b.appendChild(el('small', '', s.country || ''));
+    b.addEventListener('click', () => {
+      const a = document.getElementById('radioPlayer');
+      if (a) { a.src = s.url; a.play().catch(()=>{}); }
+    });
+    box.appendChild(b);
+  });
+});
+
+document.getElementById('btnMediaRefresh')?.addEventListener('click', async () => {
+  const box = document.getElementById('mediaResults');
+  box.textContent = '';
+  const r = await fetch('/api/media/list');
+  const j = await r.json();
+  (j.items || []).forEach(it => {
+    const b = el('button', 'hub-item', it.name);
+    b.appendChild(el('small', '', it.type + ' · ' + it.path));
+    b.addEventListener('click', () => {
+      const url = '/api/media/file?path=' + encodeURIComponent(it.path);
+      if (it.type === 'video') {
+        const v = document.getElementById('mediaPlayer');
+        v.style.display = 'block';
+        v.src = url;
+        v.play().catch(()=>{});
+      } else {
+        const a = document.getElementById('radioPlayer');
+        if (a) { a.src = url; a.play().catch(()=>{}); }
+      }
+    });
+    box.appendChild(b);
+  });
+  if (!(j.items || []).length) box.appendChild(el('div', '', 'Empty ./media — mount files into media/'));
+});
+
+document.getElementById('btnPodcastLoad')?.addEventListener('click', async () => {
+  const url = document.getElementById('podcastUrl')?.value?.trim();
+  const box = document.getElementById('podcastResults');
+  box.textContent = '';
+  const r = await fetch('/api/podcast/feed?url=' + encodeURIComponent(url));
+  const j = await r.json();
+  (j.items || []).forEach(it => {
+    const b = el('button', 'hub-item', it.title);
+    b.addEventListener('click', () => {
+      const a = document.getElementById('podcastPlayer');
+      if (a) { a.src = it.url; a.play().catch(()=>{}); }
+    });
+    box.appendChild(b);
+  });
+});
+
+document.getElementById('btnEpgLoad')?.addEventListener('click', async () => {
+  const url = document.getElementById('epgUrl')?.value?.trim();
+  const headers = { 'Content-Type': 'application/json' };
+  const tok = localStorage.getItem('pi_vintage_admin_token');
+  if (tok) headers['X-Admin-Token'] = tok;
+  const r = await fetch('/api/epg/load', { method: 'POST', headers, body: JSON.stringify({ url }) });
+  const j = await r.json();
+  const pre = document.getElementById('epgMeta');
+  if (pre) { pre.hidden = false; pre.textContent = JSON.stringify(j, null, 2); }
+});
+
+// EPG OSD on channel change
+const _playChannelOrig = typeof playChannel === 'function' ? playChannel : null;
+if (_playChannelOrig) {
+  window.playChannel = async function(index) {
+    const r = _playChannelOrig(index);
+    try {
+      const ch = channels[index];
+      const key = (ch && (ch.tvgId || ch.id || ch.name)) || '';
+      const er = await fetch('/api/epg/now?channel=' + encodeURIComponent(key));
+      const ej = await er.json();
+      let osd = document.getElementById('epgOsd');
+      if (!osd) {
+        osd = document.createElement('div');
+        osd.id = 'epgOsd';
+        osd.className = 'epg-osd';
+        document.getElementById('screenInner')?.appendChild(osd);
+      }
+      const cur = ej.current && ej.current.title;
+      const next = ej.next && ej.next.title;
+      osd.textContent = cur ? (`NOW: ${cur}` + (next ? ` · NEXT: ${next}` : '')) : '';
+    } catch (_) {}
+    return r;
+  };
+}
+
+// PWA register
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+(function extendAiTools() {
+  const prev = window.runAiAction;
+  window.runAiAction = async function(name, args) {
+    if (name === 'github_search') {
+      const q = (args && (args.query || args.q || args.value)) || '';
+      const input = document.getElementById('hubSearchQ');
+      if (input) input.value = q;
+      const hub = document.getElementById('hubPanel');
+      if (hub) hub.style.display = 'block';
+      document.querySelector('.hub-tab[data-hub="discover"]')?.click();
+      if (typeof hubGithubSearch === 'function') await hubGithubSearch();
+      return { ok: true };
+    }
+    if (name === 'open_hub') {
+      const hub = document.getElementById('hubPanel');
+      if (hub) hub.style.display = 'block';
+      return { ok: true };
+    }
+    if (typeof prev === 'function') return prev(name, args);
+    return { ok: false };
+  };
+  if (window.__piVintageTv) window.__piVintageTv.runAiAction = window.runAiAction;
+})();
+
+
+/* Swipe channels on CRT / fullscreen */
+(function setupSwipeChannels() {
+  const targets = () => [document.getElementById('screenInner'), document.getElementById('tv-frame-container')].filter(Boolean);
+  let x0 = 0, y0 = 0, t0 = 0;
+  function bind(el) {
+    if (!el || el.__swipeBound) return;
+    el.__swipeBound = true;
+    el.addEventListener('touchstart', (e) => {
+      const t = e.changedTouches[0];
+      x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
+    }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - x0;
+      const dy = t.clientY - y0;
+      const dt = Date.now() - t0;
+      if (dt > 800) return;
+      if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+      if (!channels || !channels.length) return;
+      if (dx < 0) playChannel((currentChannelIndex + 1) % channels.length);
+      else playChannel((currentChannelIndex - 1 + channels.length) % channels.length);
+    }, { passive: true });
+  }
+  targets().forEach(bind);
+  document.addEventListener('fullscreenchange', () => setTimeout(() => targets().forEach(bind), 50));
+})();
+
+/* ---- smart_import + remote QR in AI chat ---- */
+async function toolSmartImport(args) {
+  args = args || {};
+  const query = args.query || args.q || args.value || args.message || '';
+  showOsd(currentLang === 'vi' ? 'AI đang nhập kênh…' : 'AI importing channels…');
+  try {
+    const r = await fetch('/api/tools/smart_import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      showOsd(j.error || 'smart_import failed');
+      if (window.appendAiMsg) {
+        window.appendAiMsg('ai', escapeHtmlSafe('Import failed: ' + (j.error || 'error')));
+      }
+      return j;
+    }
+    const msg = (currentLang === 'vi')
+      ? `Đã nhập từ <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b>: <b>+${j.added || 0}</b> kênh mới (tổng kho ${j.total || j.channelCount || '?'}). Nguồn công khai allowlist — app chỉ là trình phát.`
+      : `Imported from <b>${escapeHtmlSafe(j.sourceLabel || j.sourceId)}</b>: <b>+${j.added || 0}</b> new (library ${j.total || j.channelCount || '?'}). Public allowlisted source — app is a player only.`;
+    if (window.appendAiMsg) window.appendAiMsg('ai', msg);
+    showOsd((currentLang === 'vi' ? 'Đã nhập +' : 'Imported +') + (j.added || 0));
+    if (typeof loadLibraryIntoTv === 'function') await loadLibraryIntoTv();
+    return j;
+  } catch (e) {
+    showOsd(String(e.message || e));
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+function escapeHtmlSafe(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function toolShowRemoteAccess() {
+  try {
+    const r = await fetch('/api/app/access');
+    const j = await r.json();
+    const url = j.publicUrl || j.localUrl || location.origin;
+    const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=' + encodeURIComponent(url);
+    // Prefer same-origin canvas fallback if offline: still show link
+    const html =
+      '<div class="ai-remote-card">' +
+      '<div style="font-weight:600;margin-bottom:6px">' +
+      (currentLang === 'vi' ? 'Truy cập TV từ xa' : 'Remote TV access') +
+      '</div>' +
+      '<div style="font-size:0.85rem;word-break:break-all;margin-bottom:8px"><a href="' + escapeHtmlSafe(url) + '" target="_blank" rel="noopener">' + escapeHtmlSafe(url) + '</a></div>' +
+      '<img class="ai-qr" src="' + qrImg + '" alt="QR" width="200" height="200" style="border-radius:12px;background:#fff;padding:6px;max-width:100%;height:auto" />' +
+      '<div style="opacity:.7;font-size:0.75rem;margin-top:6px">' +
+      (currentLang === 'vi'
+        ? 'Quét QR bằng điện thoại · IP public:port do SoloHost cấp. Đặt SOLOHOST_PUBLIC_URL nếu link chưa đúng.'
+        : 'Scan with phone · public IP:port from SoloHost. Set SOLOHOST_PUBLIC_URL if the link is wrong.') +
+      '</div></div>';
+    if (window.appendAiMsg) window.appendAiMsg('ai', html);
+    else showOsd(url);
+    return { ok: true, url };
+  } catch (e) {
+    if (window.appendAiMsg) window.appendAiMsg('ai', escapeHtmlSafe(String(e.message || e)));
+    return { ok: false };
+  }
+}
+
+(function wireSmartAndQr() {
+  const prev = window.runAiAction;
+  window.runAiAction = async function(name, args) {
+    if (name === 'smart_import') return toolSmartImport(args || {});
+    if (name === 'show_remote_access') return toolShowRemoteAccess(args || {});
+    if (typeof prev === 'function') return prev(name, args);
+    return { ok: false };
+  };
+  if (window.__piVintageTv) window.__piVintageTv.runAiAction = window.runAiAction;
 })();

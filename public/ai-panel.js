@@ -26,6 +26,7 @@ function renderDonate(donate) {
   box.innerHTML = '<strong>Ủng hộ tác giả</strong>' + rows.slice(0, 12).map(([k, v]) =>
     '<div class="fb-acc"><div class="fb-k">' + escapeHtml(k) + '</div><code class="fb-val">' + escapeHtml(v) + '</code></div>').join('');
 }
+window.appendAiMsg = appendMsg;
 function setUnread(n) {
   const badge = document.getElementById('aiBadge');
   const tabBadge = document.getElementById('fbTabBadge');
@@ -71,22 +72,23 @@ function gameContext() {
     return { app: 'Pi Vintage TV' };
   }
 }
-function executeActions(actions) {
+async function executeActions(actions) {
   const api = window.__piVintageTv || {};
-  (actions || []).forEach(a => {
-    if (!a || a.ok === false) return;
+  for (const a of (actions || [])) {
+    if (!a || a.ok === false) continue;
     const name = a.action || a.name;
-    // Prefer args from model; server may echo args on the result object
     const args = a.args || {};
     if (typeof api.runAiAction === 'function') {
-      try { api.runAiAction(name, args); } catch (e) { console.warn(e); }
+      try { await api.runAiAction(name, args); } catch (e) { console.warn(e); }
     }
-  });
+  }
 }
 
 const aiChat = document.getElementById('aiChat');
 const aiInput = document.getElementById('aiInput');
 function appendMsg(role, html) {
+  // exposed for QR / tool rich messages
+
   const div = document.createElement('div');
   div.className = 'msg ' + role;
   div.innerHTML = html;
@@ -148,7 +150,7 @@ async function sendAI() {
   try {
     const out = await ai.chat(text, gameContext());
     loading.remove();
-    executeActions(out.actions);
+    await executeActions(out.actions);
     const local = out.source === 'local' || out.configured === false;
     appendMsg('ai', escapeHtml(out.reply || 'Không có phản hồi').replace(/\n/g, '<br>') +
       (local ? '<div style="opacity:.55;font-size:.75rem">Local guide</div>' : ''));
