@@ -244,24 +244,49 @@ async function filterLiveChannels(list) {
 }
 
 
+let serverUserState = null;
+let userStateReady = false;
+let userStateWrite = Promise.resolve();
+let lastHistoryId = '';
+async function fetchUserState() {
+  try {
+    const r = await fetch('/api/user/state', { cache: 'no-store' });
+    if (r.ok) { serverUserState = await r.json(); userStateReady = !!serverUserState.ok; }
+  } catch (_) {}
+  return serverUserState;
+}
+function persistUserState(patch) {
+  userStateWrite = userStateWrite.then(async () => {
+    try { await fetch('/api/user/state', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }); } catch (_) {}
+  });
+  return userStateWrite;
+}
+
 async function loadCountry(code) {
   currentCountry = CHANNELS_BY_COUNTRY[code] ? code : 'vn';
   localStorage.setItem('pi_vintage_country', currentCountry);
   if (countrySelect) countrySelect.value = currentCountry;
   const base = [...(CHANNELS_BY_COUNTRY[currentCountry] || [])];
-  const saved = localStorage.getItem('pi_vintage_channels');
-  if (saved) {
-    try {
-      const custom = JSON.parse(saved);
-      custom.forEach(c => base.push(c));
-    } catch (e) {}
+  await userStateWrite;
+  await fetchUserState();
+  const localCustom = getCustomChannels();
+  let custom = localCustom;
+  if (serverUserState && Array.isArray(serverUserState.customChannels)) {
+    if (serverUserState.customChannels.length || !localCustom.length) custom = serverUserState.customChannels;
+    else if (localCustom.length) persistUserState({ customChannels: localCustom }); // migrate older browser-only channels
+    try { localStorage.setItem('pi_vintage_channels', JSON.stringify(custom)); } catch (_) {}
   }
+  custom.forEach(c => { if (c && c.url && !base.some(x => x.id === c.id || x.url === c.url)) base.push(c); });
   showOsd(currentLang === 'vi' ? 'Đang lọc kênh…' : 'Filtering channels…');
   channels = await filterLiveChannels(base);
-  currentChannelIndex = 0;
+  const savedFavorites = new Set(serverUserState && Array.isArray(serverUserState.favorites) ? serverUserState.favorites : []);
+  channels = channels.map(ch => ({ ...ch, favorite: savedFavorites.has(ch.id) || !!ch.favorite }));
+  const wantedId = serverUserState && serverUserState.lastChannelId;
+  const restoreIndex = wantedId ? channels.findIndex(c => c.id === wantedId) : -1;
+  currentChannelIndex = restoreIndex >= 0 ? restoreIndex : 0;
   renderChannelSelect();
-  if (isPoweredOn) playChannel(0);
-  else showOsd(channels[0] ? channels[0].name : '—');
+  if (isPoweredOn) playChannel(currentChannelIndex);
+  else showOsd(channels[currentChannelIndex] ? channels[currentChannelIndex].name : '—');
 }
 
 function renderChannelSelect() {
@@ -613,7 +638,9 @@ function getCustomChannels() {
   } catch (e) { return []; }
 }
 function saveCustomChannels(list) {
-  localStorage.setItem('pi_vintage_channels', JSON.stringify(list));
+  try { localStorage.setItem('pi_vintage_channels', JSON.stringify(list)); } catch (_) {}
+  // Server-side persistence makes custom channels survive browser/device changes.
+  persistUserState({ customChannels: list });
 }
 
 function renderChannelManager() {
@@ -667,14 +694,17 @@ function renderChannelManager() {
       fav.title = 'Favorite';
       fav.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (ch.id && !String(ch.id).startsWith('custom-')) {
-          await fetch('/api/library/channels/' + encodeURIComponent(ch.id), {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ favorite: !ch.favorite })
-          });
-          ch.favorite = !ch.favorite;
-        } else {
-          ch.favorite = !ch.favorite;
+        ch.favorite = !ch.favorite;
+        if (ch.id) {
+          try {
+            await fetch('/api/user/favorite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ch.id, on: ch.favorite }) });
+            if (!String(ch.id).startsWith('custom-')) {
+              await fetch('/api/library/channels/' + encodeURIComponent(ch.id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ favorite: ch.favorite }) });
+            } else {
+              const saved = getCustomChannels().map(c => c.id === ch.id ? { ...c, favorite: ch.favorite } : c);
+              saveCustomChannels(saved);
+            }
+          } catch (_) {}
         }
         renderChannelManager();
       });
@@ -723,6 +753,11 @@ function playChannel(index) {
   if (frameContainer) frameContainer.style.setProperty('--ch-rot', (index * 30) + 'deg');
   const ch = channels[index];
   showOsd(ch.name);
+  // Record the channel on the server; avoid duplicate writes for repeated UI calls.
+  if (ch && ch.id && ch.id !== lastHistoryId) {
+    lastHistoryId = ch.id;
+    fetch('/api/user/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ch.id, name: ch.name, url: ch.url, country: currentCountry }) }).catch(() => {});
+  }
   clearWatchTimers();
   if (!isPoweredOn) return;
   if (hls) { hls.destroy(); hls = null; }
@@ -943,10 +978,7 @@ window.addEventListener('DOMContentLoaded', () => {
   applyModel(MODEL_BADGES[saved] ? saved : 'tv-international-red');
   setPower(true);
   fitTvToViewport();
-  setTimeout(() => {
-    const vidIdx = channels.findIndex(c => c.url && !c.url.startsWith('OFFICIAL:') && c.url !== 'STATIC');
-    playChannel(vidIdx >= 0 ? vidIdx : 0);
-  }, 400);
+  // loadCountry() restores the last server-saved channel; do not override it here.
 });
 
 window.__piVintageTv = {
