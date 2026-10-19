@@ -401,7 +401,7 @@ function renderChannelSelect() {
   channels.forEach((ch, idx) => {
     const opt = document.createElement('option');
     opt.value = idx;
-    opt.textContent = ch.name;
+    opt.textContent = ch.name + (isDeadChannel(ch) ? ' ✕' : '');
     channelSelect.appendChild(opt);
   });
   channelSelect.value = currentChannelIndex;
@@ -487,6 +487,8 @@ function setPower(on) {
     playChannel(currentChannelIndex);
   } else {
     if (isCinemaMode) setCinemaMode(false);
+    clearSignalTimer();
+    setPictureClear(false);
     if (video) {
       video.pause();
       video.style.display = 'none';
@@ -608,9 +610,17 @@ function playHlsStream(url) {
   if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
   enableVideoAudio();
   if (typeof Hls !== 'undefined' && Hls.isSupported() && url.includes('.m3u8')) {
+    const dl = (navigator.connection && navigator.connection.downlink) || 0;
+    const startTok = playToken;
     hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
+      autoStartLoad: false,                 // pick a sharp first quality level, then start loading
+      capLevelToPlayerSize: false,          // never cap quality to the small CRT window
+      abrEwmaDefaultEstimate: dl > 0 ? dl * 1e6 * 0.75 : 5e6,   // start high instead of at the lowest level
+      abrBandWidthFactor: 0.9,
+      abrBandWidthUpFactor: 0.7,
+      backBufferLength: 30,
       xhrSetup: function (xhr) {
         try { xhr.withCredentials = false; } catch (e) {}
       }
@@ -618,36 +628,28 @@ function playHlsStream(url) {
     hls.loadSource(url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      try {
+        const lv = PiZap.pickStartLevel(hls.levels, {
+          viewH: video ? video.clientHeight : 0,
+          dpr: window.devicePixelRatio || 1,
+          downlinkMbps: dl,
+          fullscreen: !!document.fullscreenElement
+        });
+        if (lv >= 0) hls.startLevel = lv;
+      } catch (_) {}
+      try { hls.startLoad(-1); } catch (_) {}
       playVideoWithAudio().finally(() => { try { endChannelBusy(); } catch (_) {} });
       scheduleVideoFit();
       scheduleStaticAutoOff();
     });
     hls.on(Hls.Events.ERROR, (e, data) => {
-      if (data && data.fatal) {
-        try { endChannelBusy(); } catch (_) {}
-        const ch = channels[currentChannelIndex];
-        // Drop dead channel from zap list
-        if (ch && ch.url && ch.url !== 'STATIC') {
-          const cache = getProbeCache();
-          cache[ch.url] = false;
-          setProbeCache(cache);
-          channels = channels.filter(c => c.id !== ch.id);
-          if (!channels.length) {
-            channels = [{ id: 'static', name: 'CH-01 Static', category: 'Special', url: 'STATIC' }];
-          }
-          renderChannelSelect();
-        }
-        if (ch && ch.fallbackOfficial) {
-          showOfficialCard(ch.officialName || ch.name, ch.fallbackOfficial);
-        } else {
-          playStaticSound(true);
-          // Auto skip to next live channel
-          if (channels.length) {
-            const next = Math.min(currentChannelIndex, channels.length - 1);
-            setTimeout(() => playChannel(next), 400);
-          }
-        }
+      if (!data || !data.fatal || startTok !== playToken) return;
+      // one recovery attempt for decoder hiccups before declaring "no signal"
+      if (Hls.ErrorTypes && data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoverToken !== playToken) {
+        mediaRecoverToken = playToken;
+        try { hls.recoverMediaError(); return; } catch (_) {}
       }
+      handleNoSignal('hls-' + (data.details || data.type || 'fatal'));
     });
   } else if (video.canPlayType('application/vnd.apple.mpegurl') || url.includes('.m3u8')) {
     video.src = url;
@@ -862,6 +864,99 @@ let channelBusyTimer = null;
 let channelGen = 0;
 const CHANNEL_BUSY_MS = 12000;
 
+/* ---- No-signal handling (v1.9.19): channels without a picture are skipped while zapping ----
+   - a channel is "dead" after a fatal stream error or 10 s without a picture
+   - dead channels are skipped by next / previous / swipe / keys, shown with a ✕ in the list
+   - they are NOT deleted: they are tried again after 10 minutes (or via "retry channels")
+   - a channel with backup sources tries them first; only then is it marked dead */
+const SIGNAL_TIMEOUT_MS = 10000;
+const deadReg = PiZap.createDeadRegistry({ storage: window.localStorage });
+let navDir = 1;               // direction of the last zap: +1 next, -1 previous
+let selectionMode = 'pick';   // 'nav' = next/prev/swipe, 'pick' = explicit choice from the list
+let hopCount = 0;             // automatic skips since the last user action
+let playToken = 0;            // changes on every playChannel(); late timers compare against it
+let signalTimer = null;
+let noSignalToken = -1;
+let mediaRecoverToken = -1;
+let picturePref = (localStorage.getItem('pi_vintage_picture') === 'retro') ? 'retro' : 'clear';
+
+function isRealStream(ch) { return !!(ch && ch.url && ch.url !== 'STATIC' && !String(ch.url).startsWith('OFFICIAL:')); }
+function chanKey(ch) { return ch ? (ch.id || ch.url) : ''; }
+function chPlainName(ch) { return String((ch && ch.name) || '').replace(/^CH-\d+\s*/, ''); }
+function isDeadChannel(ch) { return isRealStream(ch) && deadReg.isDead(chanKey(ch)); }
+function clearSignalTimer() { if (signalTimer) { clearTimeout(signalTimer); signalTimer = null; } }
+function setPictureClear(on) {
+  if (frameContainer) frameContainer.classList.toggle('clear-picture', !!on && picturePref === 'clear');
+}
+function armSignalWatch() {
+  clearSignalTimer();
+  const tok = playToken;
+  signalTimer = setTimeout(() => {
+    if (tok !== playToken) return;
+    // Picture data present but paused (autoplay blocked) is NOT "no signal"
+    if (video && (video.readyState >= 2 || video.videoWidth > 0)) { onSignalOk(); return; }
+    handleNoSignal('timeout');
+  }, SIGNAL_TIMEOUT_MS);
+}
+function onSignalOk() {
+  clearSignalTimer();
+  const ch = channels[currentChannelIndex];
+  if (!isRealStream(ch)) return;
+  hopCount = 0;
+  if (deadReg.markAlive(chanKey(ch))) renderChannelSelect();
+  setPictureClear(true);
+  try { endChannelBusy(); } catch (_) {}
+}
+function handleNoSignal(reason) {
+  const tok = playToken;
+  if (noSignalToken === tok) return;          // several triggers (error + timer) → handle once
+  noSignalToken = tok;
+  clearSignalTimer();
+  try { endChannelBusy(); } catch (_) {}
+  setPictureClear(false);
+  const ch = channels[currentChannelIndex];
+  if (!isRealStream(ch)) return;
+  const vi = currentLang === 'vi';
+  if (hls) { try { hls.destroy(); } catch (_) {} hls = null; }
+
+  // 1) backup source of the same channel (library channels can have several)
+  if (ch.sources && ch.sources.length > 1) {
+    const nxt = (ch._srcIdx || 0) + 1;
+    if (nxt < ch.sources.length && ch.sources[nxt] && ch.sources[nxt].url) {
+      ch._srcIdx = nxt;
+      ch.url = ch.sources[nxt].url;
+      showOsd(vi ? 'Thử nguồn dự phòng…' : 'Trying backup source…');
+      setTimeout(() => { if (tok === playToken) playChannel(currentChannelIndex, { hop: true }); }, 300);
+      return;
+    }
+    ch._srcIdx = 0;
+    ch.url = ch.sources[0].url;               // start from the main source next time
+  }
+
+  deadReg.markDead(chanKey(ch), reason);
+  renderChannelSelect();
+
+  // 2) explicit pick of a channel that has an official page → show that page
+  if (ch.fallbackOfficial && selectionMode === 'pick' && hopCount === 0) {
+    showOfficialCard(ch.officialName || ch.name, ch.fallbackOfficial);
+    return;
+  }
+
+  // 3) hop to the next channel (in the zapping direction) that is not marked dead
+  if (hopCount < Math.min(channels.length, 12)) {
+    const next = PiZap.findNextAlive(channels.length, currentChannelIndex, navDir, (i) => isDeadChannel(channels[i]));
+    if (next >= 0 && next !== currentChannelIndex) {
+      hopCount += 1;
+      playStaticSound(true);
+      showOsd((vi ? 'Không có tín hiệu: ' : 'No signal: ') + chPlainName(ch) + (vi ? ' → bỏ qua' : ' → skipping'));
+      setTimeout(() => { if (tok === playToken) playChannel(next, { hop: true }); }, 450);
+      return;
+    }
+  }
+  playStaticSound(true);
+  showOsd(vi ? 'Không kênh nào có tín hiệu' : 'No channel has a signal');
+}
+
 function isChannelBusy() { return !!channelBusy; }
 
 function beginChannelBusy(label) {
@@ -889,13 +984,28 @@ function requestChannelChange(index, reason) {
     showOsd(currentLang === 'vi' ? '⏳ Đang tải kênh…' : '⏳ Loading channel…');
     return false;
   }
-  const i = ((index % channels.length) + channels.length) % channels.length;
-  playChannel(i);
+  const n = channels.length;
+  let target = ((index % n) + n) % n;
+  const dir = PiZap.classifyStep(n, currentChannelIndex, target);
+  if (dir !== 0) {
+    // next / previous: land on the nearest channel that still has a signal
+    navDir = dir;
+    selectionMode = 'nav';
+    const alive = PiZap.findNextAlive(n, currentChannelIndex, dir, (i) => isDeadChannel(channels[i]));
+    if (alive >= 0) target = alive;
+  } else {
+    selectionMode = 'pick';
+  }
+  playChannel(target);
   return true;
 }
 
-function playChannel(index) {
+function playChannel(index, opts) {
   if (index < 0 || index >= channels.length) return;
+  if (!(opts && opts.hop)) hopCount = 0;
+  playToken += 1;
+  clearSignalTimer();
+  setPictureClear(false);
   currentChannelIndex = index;
   if (channelSelect) channelSelect.value = index;
   if (frameContainer) frameContainer.style.setProperty('--ch-rot', (index * 30) + 'deg');
@@ -948,6 +1058,7 @@ function playChannel(index) {
     return;
   }
   playStaticSound(false);
+  armSignalWatch();
   if (ch.url && (ch.url.includes('.m3u8') || ch.url.includes('.mpd') || ch.url.includes('.mp4'))) {
     playHlsStream(ch.url);
   } else if (video) {
@@ -1090,6 +1201,17 @@ if (btnLang) btnLang.addEventListener('click', () => {
 if (btnBw) btnBw.addEventListener('click', () => setBwMode(!isBwMode));
 if (modelSelect) modelSelect.addEventListener('change', e => { applyModel(e.target.value); fitTvToViewport(); });
 if (video) video.addEventListener('error', () => playStaticSound(true));
+if (video) {
+  // picture arrived → the channel has a signal
+  video.addEventListener('playing', onSignalOk);
+  video.addEventListener('loadeddata', () => { if (video.videoWidth > 0) onSignalOk(); });
+  video.addEventListener('emptied', () => setPictureClear(false));
+  video.addEventListener('error', () => {
+    if (!isPoweredOn || !isRealStream(channels[currentChannelIndex])) return;
+    if (video.error && /empty src/i.test(video.error.message || '')) return;   // our own reset, not a failure
+    handleNoSignal('video-error');
+  });
+}
 
 const btnCloseOfficial = document.getElementById('btnCloseOfficial');
 if (btnCloseOfficial) {
@@ -1181,6 +1303,7 @@ async function toggleVideoFullscreen() {
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
       const req = target.requestFullscreen || target.webkitRequestFullscreen || target.msRequestFullscreen;
       if (req) await Promise.resolve(req.call(target));
+      else if (video && video.webkitEnterFullscreen) video.webkitEnterFullscreen();   // iPhone Safari
       await lockLandscapeIfMobile();
     } else {
       const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
@@ -1206,7 +1329,7 @@ function getAiContext() {
   const ch = channels[currentChannelIndex] || null;
   return {
     app: 'Pi Vintage TV',
-    version: '1.9.16',
+    version: '1.9.19',
     powered: !!isPoweredOn,
     country: currentCountry,
     theme: (frameContainer && frameContainer.getAttribute('data-model')) || 'tv-international-red',
@@ -1215,7 +1338,10 @@ function getAiContext() {
     channelCount: channels.length,
     channels: channels.slice(0, 40).map((c, i) => ({ i, id: c.id, name: c.name, category: c.category })),
     bw: !!isBwMode,
-    lang: currentLang
+    lang: currentLang,
+    picture: picturePref,
+    fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
+    noSignal: channels.filter(isDeadChannel).slice(0, 20).map(chPlainName)
   };
 }
 
@@ -1316,6 +1442,21 @@ function runAiAction(name, args) {
       return { ok: true, bw: isBwMode };
     case 'toggle_fullscreen':
       toggleVideoFullscreen();
+      return { ok: true };
+    case 'set_picture': {
+      const m = String(args.mode || args.value || '').toLowerCase();
+      if (m !== 'clear' && m !== 'retro') return { ok: false, error: 'unknown_mode' };
+      picturePref = m;
+      try { localStorage.setItem('pi_vintage_picture', m); } catch (_) {}
+      const live = isRealStream(channels[currentChannelIndex]) && video && video.readyState >= 2 && !video.paused;
+      setPictureClear(!!live);
+      showOsd(m === 'clear' ? (currentLang === 'vi' ? 'Hình ảnh: rõ nét' : 'Picture: clear') : (currentLang === 'vi' ? 'Hình ảnh: kiểu TV cũ' : 'Picture: retro CRT'));
+      return { ok: true, picture: m };
+    }
+    case 'retry_channels':
+      deadReg.clear();
+      renderChannelSelect();
+      showOsd(currentLang === 'vi' ? 'Đã bỏ đánh dấu kênh mất tín hiệu' : 'No-signal marks cleared');
       return { ok: true };
     case 'help':
       showOsd(currentLang === 'vi' ? 'AI: chuyển/thêm/xóa kênh, theme, fullscreen' : 'AI: channels, theme, fullscreen');
@@ -2133,106 +2274,108 @@ window.toolGithubSearch = toolGithubSearch;
 
 
 /* ============================================================
-   YouTube Shorts-like gestures on CRT / video
-   - Double-tap: toggle fullscreen (landscape on mobile)
-   - Swipe H or V: change channel (blocked while loading)
-   - Tap when TV off: power on
+   YouTube Shorts-like gestures on the CRT (rewritten in v1.9.19)
+   - Double-tap / double-click on the SCREEN: toggle fullscreen (one tap does nothing)
+   - Swipe H or V: change channel (skips channels without signal)
+   - Tap when the TV is off: power on
+   ONE delegated listener on document. The old build bound the same handler to 6
+   nested elements, so a single tap bubbled through all of them, was counted several
+   times and read as a double-tap (fullscreen on one tap).
    ============================================================ */
 (function setupShortsGestures() {
-  const DOUBLE_MS = 280;
-  const TAP_MOVE = 18;
-  const SWIPE_MIN = 42;
-  let x0 = 0, y0 = 0, t0 = 0;
-  let lastTapAt = 0, lastTapX = 0, lastTapY = 0;
-  let moved = false;
+  const TAP_MOVE = 16, SWIPE_MIN = 42;
+  const dbl = PiZap.createDoubleTap({ windowMs: 320, slopPx: 40 });
+  const fsGuard = PiZap.createCooldown(700);
+  const CONTROLS = 'button, a, select, input, textarea, label, [role="button"], .universal-controls, .hub-panel, .custom-add-box, .panel-overlay';
+  let x0 = 0, y0 = 0, t0 = 0, moved = false, tracking = false, startOnScreen = false;
+  let lastTouchAt = 0, poweredByTapAt = 0;
 
-  function onStart(e) {
-    const t = e.changedTouches ? e.changedTouches[0] : e;
-    x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
-    moved = false;
+  const tvEl = () => document.getElementById('tv-frame-container');
+  const screenEl = () => document.getElementById('screenInner');
+  const inside = (el, target) => !!(el && target && el.contains(target));
+  const isControl = (target) => !!(target && target.closest && target.closest(CONTROLS));
+  const onTv = (target) => inside(tvEl(), target) && !isControl(target);
+  const onScreen = (target) => inside(screenEl(), target) && !isControl(target);
+  const toggleFs = () => { if (fsGuard.ready(Date.now())) toggleVideoFullscreen(); };
+  function powerOnByTap() {
+    poweredByTapAt = Date.now();
+    try { markInteracted(); } catch (_) {}
+    try { setPower(true); } catch (_) {}
+    showOsd(currentLang === 'vi' ? 'TV bật' : 'TV on');
   }
-  function onMove(e) {
-    const t = e.changedTouches ? e.changedTouches[0] : e;
+
+  // no browser double-tap-zoom delay on the TV
+  [tvEl(), screenEl()].forEach((el) => { if (el) el.style.touchAction = 'manipulation'; });
+
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches.length > 1) { tracking = false; dbl.reset(); return; }
+    tracking = onTv(e.target);
+    if (!tracking) return;
+    startOnScreen = onScreen(e.target);
+    const t = e.changedTouches[0];
+    x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); moved = false;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!tracking) return;
+    const t = e.changedTouches[0];
     if (Math.abs(t.clientX - x0) > TAP_MOVE || Math.abs(t.clientY - y0) > TAP_MOVE) moved = true;
-  }
-  function onEnd(e) {
-    const t = e.changedTouches ? e.changedTouches[0] : e;
-    const dx = t.clientX - x0, dy = t.clientY - y0;
-    const dt = Date.now() - t0;
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    lastTouchAt = Date.now();
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0, dt = Date.now() - t0;
     const adx = Math.abs(dx), ady = Math.abs(dy);
 
     if (!isPoweredOn) {
-      if (dt < 700 && adx < 40 && ady < 40) {
-        try { markInteracted(); } catch (_) {}
-        try { setPower(true); } catch (_) {}
-        showOsd(currentLang === 'vi' ? 'TV bật' : 'TV on');
-      }
+      if (dt < 700 && adx < 40 && ady < 40) powerOnByTap();
+      dbl.reset();
       return;
     }
     try { markInteracted(); } catch (_) {}
 
     if (dt < 900 && (adx >= SWIPE_MIN || ady >= SWIPE_MIN)) {
-      if (typeof isChannelBusy === 'function' && isChannelBusy()) {
+      dbl.reset();
+      if (isChannelBusy()) {
         showOsd(currentLang === 'vi' ? '⏳ Đang tải kênh…' : '⏳ Loading channel…');
         return;
       }
-      if (ady >= adx) {
-        if (dy < 0) requestChannelChange(currentChannelIndex + 1, 'swipe-v');
-        else requestChannelChange(currentChannelIndex - 1, 'swipe-v');
-      } else {
-        if (dx < 0) requestChannelChange(currentChannelIndex + 1, 'swipe-h');
-        else requestChannelChange(currentChannelIndex - 1, 'swipe-h');
-      }
+      const vertical = ady >= adx;
+      const forward = vertical ? dy < 0 : dx < 0;
+      requestChannelChange(currentChannelIndex + (forward ? 1 : -1), vertical ? 'swipe-v' : 'swipe-h');
       return;
     }
 
-    if (!moved && dt < 450 && adx < TAP_MOVE && ady < TAP_MOVE) {
-      const now = Date.now();
-      if (now - lastTapAt < DOUBLE_MS && Math.abs(t.clientX - lastTapX) < 40 && Math.abs(t.clientY - lastTapY) < 40) {
-        lastTapAt = 0;
-        toggleVideoFullscreen();
-        return;
-      }
-      lastTapAt = now; lastTapX = t.clientX; lastTapY = t.clientY;
+    if (!moved && dt < 450 && startOnScreen) {
+      if (dbl.hit(t.clientX, t.clientY, Date.now())) toggleFs();   // only the 2nd tap of a pair
+    } else {
+      dbl.reset();
     }
-  }
+  }, { passive: true });
 
-  function bind(el) {
-    if (!el || el.__shortsBound) return;
-    el.__shortsBound = true;
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: true });
-    el.addEventListener('touchend', onEnd, { passive: true });
-    el.addEventListener('dblclick', (ev) => {
-      if (!isPoweredOn) { try { setPower(true); } catch (_) {} return; }
-      try { markInteracted(); } catch (_) {}
-      toggleVideoFullscreen();
-      ev.preventDefault();
-    });
-    el.addEventListener('click', () => {
-      if (!isPoweredOn) {
-        try { markInteracted(); } catch (_) {}
-        try { setPower(true); } catch (_) {}
-        showOsd(currentLang === 'vi' ? 'TV bật' : 'TV on');
-      }
-    });
-  }
-  function rebind() {
-    [
-      document.getElementById('screenInner'),
-      document.getElementById('tv-frame-container'),
-      document.getElementById('tvVideo'),
-      document.getElementById('staticCanvas'),
-      document.querySelector('.crt-viewport'),
-      document.querySelector('.crt-screen-container'),
-      document.fullscreenElement
-    ].forEach(bind);
-  }
-  rebind();
+  // Mouse: double-click on the screen. (Touch already handled above — ignore the synthesized dblclick.)
+  document.addEventListener('dblclick', (ev) => {
+    if (Date.now() - lastTouchAt < 900) return;
+    if (Date.now() - poweredByTapAt < 600) return;          // the first click just switched the TV on
+    if (!onScreen(ev.target)) return;
+    if (!isPoweredOn) { powerOnByTap(); return; }
+    try { markInteracted(); } catch (_) {}
+    toggleFs();
+    ev.preventDefault();
+  });
+
+  // Mouse: a click on a switched-off TV turns it on
+  document.addEventListener('click', (ev) => {
+    if (isPoweredOn || Date.now() - lastTouchAt < 900) return;
+    if (onTv(ev.target)) powerOnByTap();
+  });
+
   document.addEventListener('fullscreenchange', () => {
-    setTimeout(rebind, 40);
     if (!document.fullscreenElement && typeof unlockOrientation === 'function') unlockOrientation();
   });
-  document.addEventListener('webkitfullscreenchange', () => setTimeout(rebind, 40));
-  window.addEventListener('load', rebind);
 })();

@@ -1214,3 +1214,19 @@ body.cinema-mode .tv-stage {
 .ch-row-actions { display: flex; gap: 4px; }
 .ch-row-actions .btn { padding: 2px 8px; min-width: 28px; }
 .ai-qr-wrap svg { width: 200px; height: 200px; }
+
+/* ============================================================
+   1.9.19 — Clear picture
+   While a real stream is playing (class .clear-picture, set from app.js) the CRT look stays,
+   but the video is no longer degraded: no CSS filter pass on the video, lighter scanlines,
+   vignette and glare. The full retro look returns on static / no signal / power off,
+   and can be forced everywhere with the AI action set_picture {mode:"retro"}.
+   ============================================================ */
+.tv-frame-container.clear-picture video { filter: none; image-rendering: auto; }
+body.mode-bw .tv-frame-container.clear-picture video { filter: grayscale(100%); }
+.tv-frame-container.clear-picture .scanlines,
+.tv-frame-container.clear-picture.tuned-in .scanlines { opacity: 0.1; }
+.tv-frame-container.clear-picture .crt-vignette,
+.tv-frame-container.clear-picture.tuned-in .crt-vignette { opacity: 0.3; }
+.tv-frame-container.clear-picture .crt-glare { opacity: 0.45; }
+.tv-frame-container.clear-picture #staticCanvas { opacity: 0; }

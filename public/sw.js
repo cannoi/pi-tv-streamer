@@ -1,6 +1,6 @@
-const CACHE = 'pi-vintage-tv-v1.9.17';
+const CACHE = 'pi-vintage-tv-v1.9.19';
 const PRECACHE = [
-  '/', '/index.html', '/style.css', '/app.js', '/ai-panel.css', '/ai-panel.js',
+  '/', '/index.html', '/style.css', '/app.js', '/zap.js', '/ai-panel.css', '/ai-panel.js',
   '/manifest.webmanifest', '/ai-icon.png', '/qrcode.min.js', '/vendor/hls.min.js'
 ];
 self.addEventListener('install', (e) => {

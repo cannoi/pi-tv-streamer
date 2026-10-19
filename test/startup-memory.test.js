@@ -12,6 +12,6 @@ test('startup automatically restores shared library without competing country bo
   assert.match(source, /if \(st && Number\(st\.total\) > 0\)\s*\{\s*await fetchUserState\(\);\s*await loadLibraryIntoTv\(\{ automatic: true \}\);/);
   assert.match(domReady, /setPower\(false\)/);
   const sw = fs.readFileSync(path.join(__dirname, '../public/sw.js'), 'utf8');
-  assert.match(sw, /pi-vintage-tv-v1\.9\.17/);
+  assert.match(sw, /pi-vintage-tv-v1\.9\.\d+/);
   assert.match(source, /setPower\(true\);\s*applyLanguage\(\);\s*\}\)\(\);/);
 });
