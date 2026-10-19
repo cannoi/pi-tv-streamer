@@ -1317,3 +1317,60 @@ body.fs-css-fallback .tv-stage {
     height: 100vh !important;
   }
 }
+
+
+/* ===== FORCE landscape visual (even when browser denies orientation.lock) ===== */
+body.fs-force-rotate {
+  overflow: hidden !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #000 !important;
+}
+body.fs-force-rotate .tv-stage {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  /* width/height set in JS: innerHeight x innerWidth */
+  transform: translate(-50%, -50%) rotate(90deg) !important;
+  transform-origin: center center !important;
+  z-index: 100000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  background: #000 !important;
+}
+body.fs-force-rotate .tv-frame-container,
+body.fs-force-rotate .tv-shell,
+body.fs-force-rotate .tv-body,
+body.fs-force-rotate .crt-bezel,
+body.fs-force-rotate .crt-viewport,
+body.fs-force-rotate #screenInner {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #000 !important;
+}
+body.fs-force-rotate #tvVideo,
+body.fs-force-rotate video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: #000 !important;
+}
+body.fs-force-rotate .app-header,
+body.fs-force-rotate .universal-controls,
+body.fs-force-rotate .side-panel,
+body.fs-force-rotate .tv-legs,
+body.fs-force-rotate .tv-brand-badge,
+body.fs-force-rotate #aiFab,
+body.fs-force-rotate .hub-panel {
+  display: none !important;
+}
