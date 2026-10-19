@@ -1,6 +1,6 @@
 {
   "name": "pi-vintage-tv-streamer",
-  "version": "1.9.20",
+  "version": "1.9.19",
   "description": "Pi Vintage TV \u2014 retro TV UI + IPTV channel library",
   "main": "server.js",
   "scripts": {

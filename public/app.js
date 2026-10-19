@@ -1280,161 +1280,48 @@ window.__piVintageTv = {
   setCinemaMode
 };
 
-/* ---- Fullscreen (mobile → landscape full viewport) ---- */
+/* ---- Fullscreen (YouTube-style control on CRT) ---- */
 function isMobileUa() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '')
-    || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024);
+    || (window.matchMedia && window.matchMedia('(max-width: 900px)').matches);
 }
-
-function isInFullscreen() {
-  return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement
-    || (video && video.webkitDisplayingFullscreen));
-}
-
 async function lockLandscapeIfMobile() {
-  if (!isMobileUa()) return false;
-  const orient = screen.orientation || screen.mozOrientation || screen.msOrientation;
-  if (!orient || typeof orient.lock !== 'function') return false;
-  // Try several landscape modes (Android Chrome / Samsung Internet)
-  for (const mode of ['landscape', 'landscape-primary', 'landscape-secondary']) {
-    try {
-      await orient.lock(mode);
-      return true;
-    } catch (_) {}
-  }
-  return false;
+  if (!isMobileUa()) return;
+  try {
+    if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+  } catch (_) {}
 }
-
 async function unlockOrientation() {
-  try {
-    const orient = screen.orientation || screen.mozOrientation || screen.msOrientation;
-    if (orient && typeof orient.unlock === 'function') orient.unlock();
-  } catch (_) {}
-  document.documentElement.classList.remove('fs-mobile-landscape');
-  document.body.classList.remove('fs-mobile-landscape');
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (_) {}
 }
-
-function applyMobileFsLayout(on) {
-  document.documentElement.classList.toggle('fs-mobile-landscape', !!on && isMobileUa());
-  document.body.classList.toggle('fs-mobile-landscape', !!on && isMobileUa());
-  if (on && typeof fitTvToViewport === 'function') {
-    setTimeout(() => { try { fitTvToViewport(); } catch (_) {} }, 80);
-    setTimeout(() => { try { fitTvToViewport(); } catch (_) {} }, 320);
-  }
-}
-
-async function enterMobileLandscapeFullscreen() {
-  const screenInner = document.getElementById('screenInner');
-  const frame = document.getElementById('tv-frame-container');
-  const vid = document.getElementById('tvVideo') || video;
-  // Prefer fullscreen the screen surface so video fills the phone in landscape
-  const target = screenInner || frame || vid;
-  if (!target) return;
-
-  // 1) Ask for landscape first when possible (must be in user gesture)
-  await lockLandscapeIfMobile();
-
-  // 2) Native Fullscreen API
-  const req = target.requestFullscreen
-    || target.webkitRequestFullscreen
-    || target.webkitRequestFullScreen
-    || target.msRequestFullscreen;
-  if (req) {
-    try {
-      await Promise.resolve(req.call(target, { navigationUI: 'hide' }));
-      applyMobileFsLayout(true);
-      // Some browsers only allow lock *after* FS
-      setTimeout(() => { lockLandscapeIfMobile(); }, 120);
-      setTimeout(() => { lockLandscapeIfMobile(); }, 500);
-      return;
-    } catch (e) {
-      console.warn('fs request', e);
-    }
-  }
-
-  // 3) iOS Safari — video-only fullscreen
-  if (vid && typeof vid.webkitEnterFullscreen === 'function') {
-    try {
-      vid.webkitEnterFullscreen();
-      applyMobileFsLayout(true);
-      return;
-    } catch (e) {
-      console.warn('webkitEnterFullscreen', e);
-    }
-  }
-
-  // 4) CSS fallback: immersive landscape-like overlay without FS API
-  applyMobileFsLayout(true);
-  document.body.classList.add('fs-css-fallback');
-  showOsd(currentLang === 'vi' ? 'Toàn màn hình (ngang)' : 'Fullscreen landscape');
-}
-
-async function exitAnyFullscreen() {
-  document.body.classList.remove('fs-css-fallback');
-  try {
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-      if (ex) await Promise.resolve(ex.call(document));
-    }
-  } catch (_) {}
-  try {
-    if (video && video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
-      video.webkitExitFullscreen();
-    }
-  } catch (_) {}
-  await unlockOrientation();
-  applyMobileFsLayout(false);
-}
-
 async function toggleVideoFullscreen() {
+  const target = document.getElementById('screenInner')
+    || document.getElementById('tvVideo')
+    || document.getElementById('tv-frame-container');
+  if (!target) return;
   try {
-    if (isInFullscreen() || document.body.classList.contains('fs-css-fallback')) {
-      await exitAnyFullscreen();
-    } else if (isMobileUa()) {
-      await enterMobileLandscapeFullscreen();
-    } else {
-      // Desktop: classic element fullscreen
-      const target = document.getElementById('screenInner')
-        || document.getElementById('tvVideo')
-        || document.getElementById('tv-frame-container');
-      if (!target) return;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
       const req = target.requestFullscreen || target.webkitRequestFullscreen || target.msRequestFullscreen;
       if (req) await Promise.resolve(req.call(target));
+      else if (video && video.webkitEnterFullscreen) video.webkitEnterFullscreen();   // iPhone Safari
+      await lockLandscapeIfMobile();
+    } else {
+      const ex = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+      if (ex) await Promise.resolve(ex.call(document));
+      await unlockOrientation();
     }
   } catch (e) {
     console.warn('fullscreen', e);
   }
-  if (btnFullscreen) btnFullscreen.classList.toggle('is-fs', isInFullscreen() || document.body.classList.contains('fs-css-fallback'));
 }
-
 const btnFullscreen = document.getElementById('btnFullscreen');
 if (btnFullscreen) btnFullscreen.addEventListener('click', (e) => {
   e.stopPropagation();
   markInteracted();
   toggleVideoFullscreen();
 });
-
-function syncFsUi() {
-  const on = isInFullscreen() || document.body.classList.contains('fs-css-fallback');
-  if (btnFullscreen) btnFullscreen.classList.toggle('is-fs', on);
-  applyMobileFsLayout(on && isMobileUa());
-  if (!on) {
-    document.body.classList.remove('fs-css-fallback');
-    unlockOrientation();
-  } else if (isMobileUa()) {
-    lockLandscapeIfMobile();
-  }
-}
-document.addEventListener('fullscreenchange', syncFsUi);
-document.addEventListener('webkitfullscreenchange', syncFsUi);
-if (video) {
-  video.addEventListener('webkitbeginfullscreen', () => applyMobileFsLayout(true));
-  video.addEventListener('webkitendfullscreen', () => { applyMobileFsLayout(false); unlockOrientation(); });
-}
-window.addEventListener('orientationchange', () => {
-  if (isInFullscreen() || document.body.classList.contains('fs-css-fallback')) {
-    setTimeout(() => { try { fitTvToViewport(); } catch (_) {} }, 150);
-  }
+document.addEventListener('fullscreenchange', () => {
+  if (btnFullscreen) btnFullscreen.classList.toggle('is-fs', !!document.fullscreenElement);
 });
 
 /* ---- AI bridge: context + actions for universal AI panel ---- */
@@ -1442,7 +1329,7 @@ function getAiContext() {
   const ch = channels[currentChannelIndex] || null;
   return {
     app: 'Pi Vintage TV',
-    version: '1.9.20',
+    version: '1.9.19',
     powered: !!isPoweredOn,
     country: currentCountry,
     theme: (frameContainer && frameContainer.getAttribute('data-model')) || 'tv-international-red',
