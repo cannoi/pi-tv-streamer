@@ -1,9 +1,11 @@
 services:
   app:
-    image: ${IMAGE_TAG:-pi-vintage-tv:local}
+    image: ghcr.io/cannoi/pi-tv-streamer:db463b6ccd23fd7054fda07268aa9f21bfbc8ec8
+    labels:
+      pi.ui.primary: "true"
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "127.0.0.1:18247:8080"
     environment:
       PORT: "8080"
       HOST: "0.0.0.0"
@@ -12,7 +14,24 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
+      AI_BASE_URL: ${AI_BASE_URL}
+      AI_DEBUG: ${AI_DEBUG}
+      AI_EXTRA_HEADERS: ${AI_EXTRA_HEADERS}
+      AI_MODE: ${AI_MODE}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL}
+      DATA_DIR: ${DATA_DIR}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      PROXY_HMAC_SECRET: ${PROXY_HMAC_SECRET}
+      PUBLIC_IP: ${PUBLIC_IP}
+      PUBLIC_URL: ${PUBLIC_URL}
+      SHFH_APP_ID: ${SHFH_APP_ID}
+      SHFH_APP_NAME: ${SHFH_APP_NAME}
+      SHFH_APP_VERSION: ${SHFH_APP_VERSION}
+      SHFH_HUB_ID: ${SHFH_HUB_ID}
+      SHFH_HUB_URL: ${SHFH_HUB_URL}
+      SHFH_INGEST_TOKEN: ${SHFH_INGEST_TOKEN}
+      SOLOHOST_PUBLIC_IP: ${SOLOHOST_PUBLIC_IP}
     volumes:
-      - app-data:/app/data
-volumes:
-  app-data:
+      # Persist library + history across container restarts
+      - ./data:/app/data
